@@ -12,19 +12,63 @@ const INVENTORY_ITEMS = [
   { to: '/catalogos', label: 'Catálogos' },
 ]
 
+const INCIDENT_ITEMS = [
+  { to: '/incidentes', label: 'Incidentes' },
+  { to: '/incidentes/base-conocimiento', label: 'Base de conocimiento' },
+  { to: '/incidentes/panel', label: 'Panel de estado' },
+  { to: '/incidentes/reportes', label: 'Reportes' },
+]
+
 const isInventoryPath = (pathname: string) => pathname.startsWith('/inventario') || pathname.startsWith('/catalogos')
+const isIncidentsPath = (pathname: string) => pathname.startsWith('/incidentes')
+
+function NavGroup({
+  id,
+  label,
+  items,
+  isActivePath,
+  location,
+}: {
+  id: string
+  label: string
+  items: { to: string; label: string }[]
+  isActivePath: (pathname: string) => boolean
+  location: string
+}) {
+  const [open, setOpen] = useState(() => isActivePath(location))
+
+  useEffect(() => {
+    if (isActivePath(location)) setOpen(true)
+  }, [location, isActivePath])
+
+  if (items.length === 0) return null
+
+  return (
+    <div className="nav-group">
+      <button type="button" className="nav-group-toggle" aria-expanded={open} aria-controls={id} onClick={() => setOpen((o) => !o)}>
+        <span>{label}</span>
+        <span aria-hidden="true">{open ? '▾' : '▸'}</span>
+      </button>
+      {open && (
+        <div id={id} className="nav-subgroup">
+          {items.map((item) => (
+            <NavLink key={item.to} to={item.to} end={item.to === items[0].to}>
+              {item.label}
+            </NavLink>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export function Layout({ children }: { children: ReactNode }) {
   const { membership, user, signOut } = useSession()
   const location = useLocation()
-  const [inventoryOpen, setInventoryOpen] = useState(() => isInventoryPath(location.pathname))
-
-  useEffect(() => {
-    if (isInventoryPath(location.pathname)) setInventoryOpen(true)
-  }, [location.pathname])
 
   const canSee = (module: ModuleKey) => can(membership?.role, module, 'read')
   const visibleInventoryItems = canSee('inventory') ? INVENTORY_ITEMS : []
+  const visibleIncidentItems = canSee('incidents') ? INCIDENT_ITEMS : []
 
   return (
     <div className="app-shell">
@@ -37,29 +81,13 @@ export function Layout({ children }: { children: ReactNode }) {
             </NavLink>
           )}
 
-          {visibleInventoryItems.length > 0 && (
-            <div className="nav-group">
-              <button
-                type="button"
-                className="nav-group-toggle"
-                aria-expanded={inventoryOpen}
-                aria-controls="nav-group-inventario"
-                onClick={() => setInventoryOpen((open) => !open)}
-              >
-                <span>Inventario</span>
-                <span aria-hidden="true">{inventoryOpen ? '▾' : '▸'}</span>
-              </button>
-              {inventoryOpen && (
-                <div id="nav-group-inventario" className="nav-subgroup">
-                  {visibleInventoryItems.map((item) => (
-                    <NavLink key={item.to} to={item.to} end={item.to === '/inventario'}>
-                      {item.label}
-                    </NavLink>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+          <NavGroup
+            id="nav-group-inventario"
+            label="Inventario"
+            items={visibleInventoryItems}
+            isActivePath={isInventoryPath}
+            location={location.pathname}
+          />
 
           {canSee('workers') && (
             <>
@@ -70,6 +98,14 @@ export function Layout({ children }: { children: ReactNode }) {
               <NavLink to="/trabajadores/notificaciones">Notificaciones</NavLink>
             </>
           )}
+
+          <NavGroup
+            id="nav-group-incidentes"
+            label="Incidentes"
+            items={visibleIncidentItems}
+            isActivePath={isIncidentsPath}
+            location={location.pathname}
+          />
         </nav>
       </aside>
       <div>

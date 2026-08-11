@@ -115,6 +115,96 @@ export type Database = {
         Update: { created_at?: string; deleted_at?: string | null; id?: string; name?: string; organization_id?: string; parent_id?: string | null }
         Relationships: []
       }
+      incident_actions: {
+        Row: {
+          created_at: string; description: string; due_date: string | null; id: string; incident_id: string
+          organization_id: string; responsible: string | null; status: string; type: string
+        }
+        Insert: {
+          created_at?: string; description: string; due_date?: string | null; id?: string; incident_id: string
+          organization_id: string; responsible?: string | null; status?: string; type: string
+        }
+        Update: {
+          created_at?: string; description?: string; due_date?: string | null; id?: string; incident_id?: string
+          organization_id?: string; responsible?: string | null; status?: string; type?: string
+        }
+        Relationships: []
+      }
+      incident_categories: {
+        Row: { created_at: string; deleted_at: string | null; id: string; name: string; organization_id: string }
+        Insert: { created_at?: string; deleted_at?: string | null; id?: string; name: string; organization_id: string }
+        Update: { created_at?: string; deleted_at?: string | null; id?: string; name?: string; organization_id?: string }
+        Relationships: []
+      }
+      incident_folio_counters: {
+        Row: { next_number: number; organization_id: string; year: number }
+        Insert: { next_number?: number; organization_id: string; year: number }
+        Update: { next_number?: number; organization_id?: string; year?: number }
+        Relationships: []
+      }
+      incident_subscribers: {
+        Row: { created_at: string; id: string; incident_id: string; last_seen_at: string; organization_id: string; user_id: string }
+        Insert: { created_at?: string; id?: string; incident_id: string; last_seen_at?: string; organization_id: string; user_id: string }
+        Update: { created_at?: string; id?: string; incident_id?: string; last_seen_at?: string; organization_id?: string; user_id?: string }
+        Relationships: []
+      }
+      incident_updates: {
+        Row: {
+          author_id: string | null; comment: string | null; created_at: string; id: string; incident_id: string
+          organization_id: string; status_from: string | null; status_to: string | null; visibility: string
+        }
+        Insert: {
+          author_id?: string | null; comment?: string | null; created_at?: string; id?: string; incident_id: string
+          organization_id: string; status_from?: string | null; status_to?: string | null; visibility?: string
+        }
+        Update: {
+          author_id?: string | null; comment?: string | null; created_at?: string; id?: string; incident_id?: string
+          organization_id?: string; status_from?: string | null; status_to?: string | null; visibility?: string
+        }
+        Relationships: []
+      }
+      incidents: {
+        Row: {
+          affected_users_count: number | null; asset_id: string | null; category_id: string | null; closed_at: string | null
+          commitment_date: string | null; created_at: string; created_by: string | null; description: string | null
+          folio: string | null; id: string; impact: string | null; organization_id: string; parent_incident_id: string | null
+          preventive_actions: string | null; priority: string; resolution: string | null; resolved_at: string | null
+          responsible_user_id: string | null; root_cause: string | null; service_id: string | null; status: string
+          title: string; type: string; updated_at: string; urgency: string | null; worker_id: string | null
+        }
+        Insert: {
+          affected_users_count?: number | null; asset_id?: string | null; category_id?: string | null; closed_at?: string | null
+          commitment_date?: string | null; created_at?: string; created_by?: string | null; description?: string | null
+          folio?: string | null; id?: string; impact?: string | null; organization_id: string; parent_incident_id?: string | null
+          preventive_actions?: string | null; priority?: string; resolution?: string | null; resolved_at?: string | null
+          responsible_user_id?: string | null; root_cause?: string | null; service_id?: string | null; status?: string
+          title: string; type: string; updated_at?: string; urgency?: string | null; worker_id?: string | null
+        }
+        Update: {
+          affected_users_count?: number | null; asset_id?: string | null; category_id?: string | null; closed_at?: string | null
+          commitment_date?: string | null; created_at?: string; created_by?: string | null; description?: string | null
+          folio?: string | null; id?: string; impact?: string | null; organization_id?: string; parent_incident_id?: string | null
+          preventive_actions?: string | null; priority?: string; resolution?: string | null; resolved_at?: string | null
+          responsible_user_id?: string | null; root_cause?: string | null; service_id?: string | null; status?: string
+          title?: string; type?: string; updated_at?: string; urgency?: string | null; worker_id?: string | null
+        }
+        Relationships: []
+      }
+      kb_articles: {
+        Row: {
+          category: string | null; content: string; created_at: string; created_by: string | null; deleted_at: string | null
+          id: string; organization_id: string; related_incident_id: string | null; title: string; updated_at: string
+        }
+        Insert: {
+          category?: string | null; content: string; created_at?: string; created_by?: string | null; deleted_at?: string | null
+          id?: string; organization_id: string; related_incident_id?: string | null; title: string; updated_at?: string
+        }
+        Update: {
+          category?: string | null; content?: string; created_at?: string; created_by?: string | null; deleted_at?: string | null
+          id?: string; organization_id?: string; related_incident_id?: string | null; title?: string; updated_at?: string
+        }
+        Relationships: []
+      }
       inventory_items: {
         Row: {
           category: string | null; created_at: string; deleted_at: string | null; id: string; min_stock: number
@@ -266,6 +356,12 @@ export type Database = {
         Row: { created_at: string; full_name: string | null; user_id: string }
         Insert: { created_at?: string; full_name?: string | null; user_id: string }
         Update: { created_at?: string; full_name?: string | null; user_id?: string }
+        Relationships: []
+      }
+      services: {
+        Row: { created_at: string; deleted_at: string | null; description: string | null; id: string; name: string; organization_id: string }
+        Insert: { created_at?: string; deleted_at?: string | null; description?: string | null; id?: string; name: string; organization_id: string }
+        Update: { created_at?: string; deleted_at?: string | null; description?: string | null; id?: string; name?: string; organization_id?: string }
         Relationships: []
       }
       sites: {

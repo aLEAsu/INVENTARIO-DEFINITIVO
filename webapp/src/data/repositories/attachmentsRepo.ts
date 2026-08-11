@@ -2,7 +2,7 @@ import { supabase } from '../../core/supabaseClient'
 import type { Tables } from '../database.types'
 
 export type Attachment = Tables<'attachments'>
-export type AttachmentEntityType = 'asset' | 'maintenance' | 'physical_count'
+export type AttachmentEntityType = 'asset' | 'maintenance' | 'physical_count' | 'incident'
 
 const MAX_SIZE_BYTES = 10 * 1024 * 1024 // 10 MB
 const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']

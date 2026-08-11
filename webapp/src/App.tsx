@@ -14,6 +14,11 @@ import { CatalogsPage } from './modules/catalogs/CatalogsPage'
 import { WorkersPage } from './modules/workers/WorkersPage'
 import { BirthdaysPage } from './modules/workers/BirthdaysPage'
 import { NotificationSettingsPage } from './modules/workers/NotificationSettingsPage'
+import { IncidentsListPage } from './modules/incidents/IncidentsListPage'
+import { IncidentDetailPage } from './modules/incidents/IncidentDetailPage'
+import { KnowledgeBasePage } from './modules/incidents/KnowledgeBasePage'
+import { StatusPanelPage } from './modules/incidents/StatusPanelPage'
+import { IncidentReportsPage } from './modules/incidents/IncidentReportsPage'
 
 function Protected({ children }: { children: React.ReactNode }) {
   return (
@@ -40,6 +45,11 @@ export default function App() {
           <Route path="/trabajadores" element={<Protected><WorkersPage /></Protected>} />
           <Route path="/trabajadores/cumpleanos" element={<Protected><BirthdaysPage /></Protected>} />
           <Route path="/trabajadores/notificaciones" element={<Protected><NotificationSettingsPage /></Protected>} />
+          <Route path="/incidentes" element={<Protected><IncidentsListPage /></Protected>} />
+          <Route path="/incidentes/:id" element={<Protected><IncidentDetailPage /></Protected>} />
+          <Route path="/incidentes/base-conocimiento" element={<Protected><KnowledgeBasePage /></Protected>} />
+          <Route path="/incidentes/panel" element={<Protected><StatusPanelPage /></Protected>} />
+          <Route path="/incidentes/reportes" element={<Protected><IncidentReportsPage /></Protected>} />
         </Routes>
       </SessionProvider>
     </BrowserRouter>

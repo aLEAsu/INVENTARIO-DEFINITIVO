@@ -1,4 +1,4 @@
-# UNOP TI Hub — webapp (Fases 1-3)
+# UNOP TI Hub — webapp (Fases 1-4)
 
 Frontend nuevo (React + TypeScript + Vite + PWA) del proyecto UNOP TI Hub.
 Convive con la app legacy (`../index.html`, `../app.js`) mientras se completan
@@ -97,8 +97,31 @@ para estos módulos, es un trabajo adicional a planear.
   [`../docs/whatsapp-setup.md`](../docs/whatsapp-setup.md) para los pasos
   exactos y las variables de entorno.
 
-Fuera de alcance (siguientes fases): Incidentes/Comunicación TI (Fase 4), y
-el agente de monitoreo de puertos en Windows (Fase 5).
+**Incidentes y Comunicación TI (Fase 4)**
+- Folio consecutivo legible por organización (`INC-2026-0001`), generado con
+  una función atómica (`private.next_incident_folio`) que evita colisiones
+  bajo creación concurrente — verificado.
+- Tipos (incidente, solicitud, problema, cambio, mantenimiento, aviso),
+  categorías configurables (sembradas con las 10 por defecto del pedido),
+  prioridad P1-P4, flujo completo de estados, relación con activo/trabajador/
+  servicio afectado.
+- Bitácora (`/incidentes/:id`) con comentarios **internos** (solo
+  `owner`/`admin_ti`/`tecnico_ti`) y **públicos** (todo el equipo) —
+  verificado con RLS que un `colaborador` no ve los internos ni puede
+  reclasificar/cerrar un incidente, aunque sí puede reportarlo y comentarlo.
+- P1/P2: banner de seguimiento crítico con causa raíz, solución y acciones
+  preventivas. `incident_actions` para acciones preventivas/correctivas,
+  también usadas para agrupar "problemas" (vía `parent_incident_id`).
+- Base de conocimiento (`/incidentes/base-conocimiento`).
+- Panel de estado (`/incidentes/panel`) para todo el equipo: solo folio,
+  categoría, prioridad, estado y fecha — la consulta al backend excluye
+  explícitamente descripción, causa raíz, bitácora y datos del reportante.
+- Reportes (`/incidentes/reportes`): por categoría/prioridad/estado/activo,
+  tiempo promedio de atención y resolución, activos con reincidencia,
+  exportables a PDF/Excel.
+- Adjuntos reutilizando el mismo bucket/tabla de Fase 2 (`entity_type='incident'`).
+
+Fuera de alcance: el agente de monitoreo de puertos en Windows (Fase 5).
 
 ## Nota sobre la IndexedDB compartida con la app legacy
 
