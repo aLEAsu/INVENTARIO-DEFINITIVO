@@ -11,6 +11,7 @@
 // idempotencia, panel -- quede probado de punta a punta) marcada como
 // simulada.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { addDays, birthdayMatchesTarget, isoDate, localDateInTimeZone } from '../_shared/date-utils.ts'
 
 interface Worker {
   id: string
@@ -21,48 +22,6 @@ interface Worker {
 interface Recipient {
   id: string
   phone_e164: string
-}
-
-function isLeapYear(year: number): boolean {
-  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0
-}
-
-function localDateInTimeZone(date: Date, timeZone: string): { year: number; month: number; day: number; hour: number } {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    hour12: false,
-  }).formatToParts(date)
-  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value)
-  return { year: get('year'), month: get('month'), day: get('day'), hour: get('hour') === 24 ? 0 : get('hour') }
-}
-
-function addDays(year: number, month: number, day: number, delta: number): { year: number; month: number; day: number } {
-  const d = new Date(Date.UTC(year, month - 1, day))
-  d.setUTCDate(d.getUTCDate() + delta)
-  return { year: d.getUTCFullYear(), month: d.getUTCMonth() + 1, day: d.getUTCDate() }
-}
-
-function isoDate(y: number, m: number, d: number): string {
-  return `${y.toString().padStart(4, '0')}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`
-}
-
-/** Determina si el cumpleanos de `birthDate` cae en `target` (y/m/d), aplicando la politica de 29 de febrero. */
-function birthdayMatchesTarget(
-  birthMonth: number,
-  birthDay: number,
-  target: { year: number; month: number; day: number },
-  feb29Policy: 'feb_28' | 'mar_1',
-): boolean {
-  if (birthMonth === target.month && birthDay === target.day) return true
-  if (birthMonth === 2 && birthDay === 29 && !isLeapYear(target.year)) {
-    if (feb29Policy === 'feb_28' && target.month === 2 && target.day === 28) return true
-    if (feb29Policy === 'mar_1' && target.month === 3 && target.day === 1) return true
-  }
-  return false
 }
 
 Deno.serve(async (req: Request) => {
