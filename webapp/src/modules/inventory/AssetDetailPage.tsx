@@ -88,8 +88,12 @@ export function AssetDetailPage() {
   async function handleSoftDelete() {
     if (!asset) return
     if (!confirm(`Dar de baja el activo "${asset.name}" (${asset.code})? Queda en el historial, no se borra.`)) return
-    await softDeleteAsset(asset)
-    navigate('/inventario')
+    try {
+      await softDeleteAsset(asset)
+      navigate('/inventario')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo dar de baja el activo.')
+    }
   }
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {

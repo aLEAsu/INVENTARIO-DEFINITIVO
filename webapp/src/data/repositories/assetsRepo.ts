@@ -108,6 +108,14 @@ async function enqueue(action: 'upsert' | 'delete', record: AssetRecord) {
   })
 }
 
+/** Errores devueltos por Postgres/PostgREST (constraint, RLS, etc.) traen un
+ * campo `code` -- son permanentes, reintentarlos en el outbox nunca los
+ * resuelve. Los fallos de red genuinos (offline, timeout) no tienen ese
+ * campo y sí vale la pena reintentarlos mas tarde. */
+function isPermanentError(err: unknown): boolean {
+  return typeof err === 'object' && err !== null && 'code' in err
+}
+
 async function pushOrQueue(action: 'upsert' | 'delete', record: AssetRecord) {
   if (!navigator.onLine) {
     await enqueue(action, record)
@@ -121,7 +129,8 @@ async function pushOrQueue(action: 'upsert' | 'delete', record: AssetRecord) {
       const { error } = await supabase.from('assets').upsert(toSupabasePayload(record))
       if (error) throw error
     }
-  } catch {
+  } catch (err) {
+    if (isPermanentError(err)) throw err
     await enqueue(action, record)
   }
 }
@@ -189,14 +198,27 @@ export async function createAsset(organizationId: string, input: AssetInput): Pr
   const now = new Date().toISOString()
   const record: AssetRecord = { id: newId(), organizationId, createdAt: now, updatedAt: now, ...input }
   await db.assets.put(record)
-  await pushOrQueue('upsert', record)
+  try {
+    await pushOrQueue('upsert', record)
+  } catch (err) {
+    // Error permanente (constraint/RLS): no dejar en cache local un
+    // registro que nunca va a sincronizar y que el usuario veria como
+    // "guardado" sin estarlo realmente.
+    await db.assets.delete(record.id)
+    throw err
+  }
   return record
 }
 
 export async function updateAsset(existing: AssetRecord, patch: Partial<AssetInput>): Promise<AssetRecord> {
   const record: AssetRecord = { ...existing, ...patch, updatedAt: new Date().toISOString() }
   await db.assets.put(record)
-  await pushOrQueue('upsert', record)
+  try {
+    await pushOrQueue('upsert', record)
+  } catch (err) {
+    await db.assets.put(existing)
+    throw err
+  }
   return record
 }
 
@@ -204,7 +226,12 @@ export async function updateAsset(existing: AssetRecord, patch: Partial<AssetInp
 export async function softDeleteAsset(record: AssetRecord): Promise<AssetRecord> {
   const updated: AssetRecord = { ...record, status: 'baja', deletedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
   await db.assets.put(updated)
-  await pushOrQueue('upsert', updated)
+  try {
+    await pushOrQueue('upsert', updated)
+  } catch (err) {
+    await db.assets.put(record)
+    throw err
+  }
   return updated
 }
 

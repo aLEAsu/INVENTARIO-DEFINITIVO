@@ -108,6 +108,8 @@ export function AssetFormModal({ organizationId, initial, categories, locations,
     setSaving(true)
     try {
       await onSubmit(form)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo guardar el activo.')
     } finally {
       setSaving(false)
     }
