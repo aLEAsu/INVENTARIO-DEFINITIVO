@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSession } from '../../core/auth/SessionContext'
 import { can } from '../../core/rbac'
 import { listAreas, listLocations, type Area, type Location } from '../../data/repositories/catalogsRepo'
@@ -11,6 +11,48 @@ import {
 } from '../../data/repositories/workersRepo'
 import { WorkerFormModal } from './WorkerFormModal'
 
+const CSV_COLUMNS = ['full_name', 'document', 'position', 'area', 'location', 'email', 'phone', 'status', 'hire_date', 'birth_date']
+
+/** Parser CSV minimo (soporta comillas y comas dentro de campos citados). */
+function parseCsv(text: string): string[][] {
+  const rows: string[][] = []
+  let row: string[] = []
+  let field = ''
+  let inQuotes = false
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i]
+    if (inQuotes) {
+      if (c === '"' && text[i + 1] === '"') {
+        field += '"'
+        i++
+      } else if (c === '"') {
+        inQuotes = false
+      } else {
+        field += c
+      }
+    } else if (c === '"') {
+      inQuotes = true
+    } else if (c === ',') {
+      row.push(field)
+      field = ''
+    } else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i + 1] === '\n') i++
+      row.push(field)
+      rows.push(row)
+      row = []
+      field = ''
+    } else {
+      field += c
+    }
+  }
+  if (field.length > 0 || row.length > 0) {
+    row.push(field)
+    rows.push(row)
+  }
+  return rows.filter((r) => r.some((c) => c.trim() !== ''))
+}
+
 export function WorkersPage() {
   const { membership } = useSession()
   const canWrite = can(membership?.role, 'workers', 'write')
@@ -19,6 +61,8 @@ export function WorkersPage() {
   const [locations, setLocations] = useState<Location[]>([])
   const [editing, setEditing] = useState<Worker | 'new' | null>(null)
   const [loading, setLoading] = useState(true)
+  const [importSummary, setImportSummary] = useState<string[] | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   async function refresh() {
     if (!membership) return
@@ -41,16 +85,142 @@ export function WorkersPage() {
     await refresh()
   }
 
+  function exportCsv() {
+    const header = CSV_COLUMNS
+    const rows = workers.map((w) => [
+      w.full_name,
+      w.document ?? '',
+      w.position ?? '',
+      areas.find((a) => a.id === w.area_id)?.name ?? '',
+      locations.find((l) => l.id === w.location_id)?.name ?? '',
+      w.email ?? '',
+      w.phone ?? '',
+      w.status,
+      w.hire_date ?? '',
+      w.birth_date ?? '',
+    ])
+    const csv = [header, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `trabajadores-${Date.now()}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !membership) return
+    const text = await file.text()
+    const rows = parseCsv(text)
+    if (rows.length === 0) {
+      setImportSummary(['El archivo está vacío.'])
+      return
+    }
+
+    const header = rows[0].map((h) => h.trim().toLowerCase())
+    const dataRows = rows.slice(1)
+    const results: string[] = []
+    let imported = 0
+
+    for (let i = 0; i < dataRows.length; i++) {
+      const rowNum = i + 2
+      const cols = dataRows[i]
+      const get = (name: string) => {
+        const idx = header.indexOf(name)
+        return idx >= 0 ? (cols[idx] ?? '').trim() : ''
+      }
+
+      const fullName = get('full_name')
+      if (!fullName) {
+        results.push(`Fila ${rowNum}: nombre completo vacío, se omitió.`)
+        continue
+      }
+
+      const hireDate = get('hire_date')
+      const birthDate = get('birth_date')
+      if (hireDate && !/^\d{4}-\d{2}-\d{2}$/.test(hireDate)) {
+        results.push(`Fila ${rowNum}: fecha de ingreso inválida ("${hireDate}"), se omitió.`)
+        continue
+      }
+      if (birthDate && !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
+        results.push(`Fila ${rowNum}: fecha de nacimiento inválida ("${birthDate}"), se omitió.`)
+        continue
+      }
+
+      const areaName = get('area')
+      const locationName = get('location')
+      const areaId = areaName ? areas.find((a) => a.name.toLowerCase() === areaName.toLowerCase())?.id ?? null : null
+      const locationId = locationName ? locations.find((l) => l.name.toLowerCase() === locationName.toLowerCase())?.id ?? null : null
+
+      try {
+        await createWorker(membership.organizationId, {
+          full_name: fullName,
+          document: get('document') || null,
+          position: get('position') || null,
+          area_id: areaId,
+          location_id: locationId,
+          email: get('email') || null,
+          phone: get('phone') || null,
+          status: get('status') === 'inactivo' ? 'inactivo' : 'activo',
+          hire_date: hireDate || null,
+          birth_date: birthDate || null,
+        })
+        imported++
+        if (areaName && !areaId) results.push(`Fila ${rowNum}: área "${areaName}" no existe en catálogos, se importó sin área.`)
+        if (locationName && !locationId) results.push(`Fila ${rowNum}: ubicación "${locationName}" no existe en catálogos, se importó sin ubicación.`)
+      } catch (err) {
+        results.push(`Fila ${rowNum}: ${err instanceof Error ? err.message : 'error al importar'}.`)
+      }
+    }
+
+    setImportSummary([`${imported} de ${dataRows.length} trabajador(es) importados.`, ...results])
+    if (fileInputRef.current) fileInputRef.current.value = ''
+    await refresh()
+  }
+
   return (
     <div>
       <div className="app-topbar">
         <h2 style={{ margin: 0 }}>Trabajadores</h2>
-        {canWrite && (
-          <button className="btn" onClick={() => setEditing('new')}>
-            Registrar trabajador
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <button className="btn secondary" onClick={exportCsv}>
+            Exportar CSV
           </button>
-        )}
+          {canWrite && (
+            <>
+              <button className="btn secondary" onClick={() => fileInputRef.current?.click()}>
+                Importar CSV
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,text/csv"
+                style={{ display: 'none' }}
+                onChange={(e) => void handleImportFile(e)}
+              />
+              <button className="btn" onClick={() => setEditing('new')}>
+                Registrar trabajador
+              </button>
+            </>
+          )}
+        </div>
       </div>
+
+      {importSummary && (
+        <div className="card" style={{ marginBottom: '1rem' }}>
+          <strong>Resultado de la importación</strong>
+          <ul>
+            {importSummary.map((line, i) => (
+              <li key={i}>{line}</li>
+            ))}
+          </ul>
+          <button className="btn secondary" onClick={() => setImportSummary(null)}>
+            Cerrar
+          </button>
+        </div>
+      )}
 
       <div className="card table-wrap">
         {loading ? (

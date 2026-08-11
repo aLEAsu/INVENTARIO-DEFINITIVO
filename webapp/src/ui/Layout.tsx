@@ -61,7 +61,15 @@ export function Layout({ children }: { children: ReactNode }) {
             </div>
           )}
 
-          {canSee('workers') && <NavLink to="/trabajadores">Trabajadores</NavLink>}
+          {canSee('workers') && (
+            <>
+              <NavLink to="/trabajadores" end>
+                Trabajadores
+              </NavLink>
+              <NavLink to="/trabajadores/cumpleanos">Cumpleaños</NavLink>
+              <NavLink to="/trabajadores/notificaciones">Notificaciones</NavLink>
+            </>
+          )}
         </nav>
       </aside>
       <div>

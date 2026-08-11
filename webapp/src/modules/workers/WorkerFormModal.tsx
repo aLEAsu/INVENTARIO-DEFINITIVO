@@ -22,6 +22,7 @@ function toInput(w?: Worker): WorkerInput {
     status: w?.status ?? 'activo',
     hire_date: w?.hire_date ?? null,
     birth_date: w?.birth_date ?? null,
+    birthday_consent: w?.birthday_consent ?? false,
   }
 }
 
@@ -114,6 +115,22 @@ export function WorkerFormModal({ areas, locations, initial, onCancel, onSubmit 
             <input id="wBirth" type="date" value={form.birth_date ?? ''} onChange={(e) => set('birth_date', e.target.value)} />
           </div>
         </div>
+
+        <div className="field" style={{ flexDirection: 'row', alignItems: 'flex-start', gap: '0.5rem' }}>
+          <input
+            id="wConsent"
+            type="checkbox"
+            checked={form.birthday_consent ?? false}
+            onChange={(e) => set('birthday_consent', e.target.checked)}
+            style={{ marginTop: '0.2rem' }}
+          />
+          <label htmlFor="wConsent" style={{ fontWeight: 400 }}>
+            El trabajador autoriza usar su nombre en recordatorios internos de cumpleaños
+            (calendario y avisos por WhatsApp al equipo). Sin este consentimiento, no aparece
+            en el calendario de cumpleaños ni recibe recordatorios asociados.
+          </label>
+        </div>
+
         {error && <p style={{ color: 'var(--danger)' }}>{error}</p>}
         <div className="modal-actions">
           <button type="button" className="btn secondary" onClick={onCancel} disabled={saving}>

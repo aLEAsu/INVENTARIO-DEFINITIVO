@@ -1,4 +1,4 @@
-# UNOP TI Hub — webapp (Fase 1)
+# UNOP TI Hub — webapp (Fases 1-3)
 
 Frontend nuevo (React + TypeScript + Vite + PWA) del proyecto UNOP TI Hub.
 Convive con la app legacy (`../index.html`, `../app.js`) mientras se completan
@@ -74,9 +74,31 @@ conexión — no tienen caché offline ni cola de sincronización propia como
 `assets` (que sí la conserva de Fase 1). Si se necesita offline-first también
 para estos módulos, es un trabajo adicional a planear.
 
-Fuera de alcance (siguientes fases, documentadas en el plan): cumpleaños y
-notificaciones WhatsApp del módulo de Trabajadores, Incidentes, y el agente
-de monitoreo de puertos en Windows.
+**Trabajadores y cumpleaños (Fase 3)**
+- Consentimiento explícito por trabajador para aparecer en recordatorios
+  (`birthday_consent`, checkbox en el formulario).
+- Protección del año de nacimiento **a nivel de dato** (no solo de UI): la
+  vista `worker_birthday_calendar` (`security_invoker`, ver migración 0016)
+  solo devuelve el año completo a `owner`/`admin_ti`/`talento_humano`; el
+  resto de roles solo ve día/mes.
+- Calendario de cumpleaños y "próximos cumpleaños" (`/trabajadores/cumpleanos`).
+- Importación/exportación CSV de trabajadores con validación fila por fila
+  (documento duplicado, fecha inválida, etc. no abortan el resto del archivo).
+- Notificaciones por WhatsApp Business Cloud API (`/trabajadores/notificaciones`):
+  destinatarios (E.164), plantillas (metadata), hora de envío configurable,
+  política del 29 de febrero, historial de envíos con estado/reintentos/error.
+  Dos Edge Functions desplegadas: `send-birthday-notifications` (cron horario
+  vía `pg_cron`/`pg_net`, idempotencia por `unique(organization_id, run_date,
+  run_type)` en `notification_jobs` + `unique(idempotency_key)` en
+  `notification_deliveries` — verificado que un doble disparo del cron no
+  duplica envíos) y `whatsapp-webhook` (recibe estados de entrega de Meta,
+  valida la firma HMAC antes de procesar). **Modo simulación activo por
+  defecto — cero mensajes reales salen hasta configurar Meta**, ver
+  [`../docs/whatsapp-setup.md`](../docs/whatsapp-setup.md) para los pasos
+  exactos y las variables de entorno.
+
+Fuera de alcance (siguientes fases): Incidentes/Comunicación TI (Fase 4), y
+el agente de monitoreo de puertos en Windows (Fase 5).
 
 ## Nota sobre la IndexedDB compartida con la app legacy
 

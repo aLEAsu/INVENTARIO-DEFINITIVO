@@ -12,6 +12,8 @@ import { PhysicalCountPage } from './modules/inventory/PhysicalCountPage'
 import { ReportsPage } from './modules/inventory/ReportsPage'
 import { CatalogsPage } from './modules/catalogs/CatalogsPage'
 import { WorkersPage } from './modules/workers/WorkersPage'
+import { BirthdaysPage } from './modules/workers/BirthdaysPage'
+import { NotificationSettingsPage } from './modules/workers/NotificationSettingsPage'
 
 function Protected({ children }: { children: React.ReactNode }) {
   return (
@@ -36,6 +38,8 @@ export default function App() {
           <Route path="/inventario/reportes" element={<Protected><ReportsPage /></Protected>} />
           <Route path="/catalogos" element={<Protected><CatalogsPage /></Protected>} />
           <Route path="/trabajadores" element={<Protected><WorkersPage /></Protected>} />
+          <Route path="/trabajadores/cumpleanos" element={<Protected><BirthdaysPage /></Protected>} />
+          <Route path="/trabajadores/notificaciones" element={<Protected><NotificationSettingsPage /></Protected>} />
         </Routes>
       </SessionProvider>
     </BrowserRouter>
