@@ -98,6 +98,39 @@ textarea:focus-visible {
   opacity: 1;
 }
 
+.nav-group-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  color: var(--primary-ink);
+  background: transparent;
+  border: none;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radius);
+  opacity: 0.85;
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+.nav-group-toggle:hover {
+  background: rgba(255, 255, 255, 0.14);
+  opacity: 1;
+}
+
+.nav-subgroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-left: 0.75rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.25);
+  padding-left: 0.5rem;
+}
+
+.nav-subgroup a {
+  font-size: 0.92rem;
+}
+
 .app-main {
   padding: 1.5rem;
   max-width: 1100px;
