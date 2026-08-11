@@ -1,0 +1,4 @@
+@echo off
+title Activo - Inventario clinico UNO-P
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0Start-Local.ps1"
+pause

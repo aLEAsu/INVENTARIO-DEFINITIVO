@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b3b60" />
+    <meta name="description" content="Gestión local de activos de UNO-P" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>Activo | Inventario clínico</title>
+  </head>
+  <body>
+    <div id="app" class="app-shell">
+      <aside class="sidebar" id="sidebar">
+        <div class="brand"><span class="brand-mark">A</span><span>Activo<span class="brand-dot">.</span></span></div>
+        <p class="brand-subtitle">Inventario clínico</p>
+        <nav class="main-nav" aria-label="Navegación principal">
+          <button class="nav-item active" data-view="dashboard"><span>▦</span>Resumen</button>
+          <button class="nav-item" data-view="assets"><span>▣</span>Activos <b id="assetCountNav">0</b></button>
+          <button class="nav-item" data-view="movements"><span>⇄</span>Movimientos</button>
+          <button class="nav-item" data-view="maintenance"><span>⌁</span>Mantenimiento</button>
+          <button class="nav-item" data-view="catalogs"><span>◫</span>Catálogos</button>
+          <button class="nav-item" data-view="reports"><span>▤</span>Reportes</button>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="sync-mini" id="syncMini"><i></i><span>Solo local</span></div>
+          <button class="nav-item" data-view="settings"><span>⚙</span>Configuración</button>
+          <p class="version">Activo v1.0 · UNO-P</p>
+        </div>
+      </aside>
+      <main class="content">
+        <header class="topbar">
+          <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú">☰</button>
+          <div class="breadcrumb"><span id="pageEyebrow">GESTIÓN DE ACTIVOS</span><h1 id="pageTitle">Resumen</h1></div>
+          <div class="topbar-actions"><span class="connection" id="connectionStatus"><i></i> Sin conexión</span><button class="icon-button" id="openSettings" title="Configuración">⚙</button><button class="avatar" title="Administrador">AV</button></div>
+        </header>
+        <section id="view" class="view" aria-live="polite"></section>
+      </main>
+    </div>
+    <div class="toast-stack" id="toastStack"></div>
+    <div class="modal-root" id="modalRoot"></div>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
