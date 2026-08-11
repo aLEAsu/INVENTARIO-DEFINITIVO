@@ -1,16 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
+import writeXlsxFile from 'write-excel-file/browser'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import { useSession } from '../../core/auth/SessionContext'
 import { can } from '../../core/rbac'
 import type { AssetRecord } from '../../data/db'
-import {
-  createAsset,
-  deleteAsset,
-  listAssets,
-  repairLegacyAssets,
-  syncOutbox,
-  updateAsset,
-  type AssetInput,
-} from '../../data/repositories/assetsRepo'
+import { createAsset, listAssets, repairLegacyAssets, syncOutbox, type AssetInput } from '../../data/repositories/assetsRepo'
+import { listAreas, listCategories, listLocations, type Area, type Category, type Location } from '../../data/repositories/catalogsRepo'
+import { listWorkers, type Worker } from '../../data/repositories/workersRepo'
 import { AssetFormModal } from './AssetFormModal'
 
 const STATUS_LABEL: Record<string, string> = {
@@ -20,25 +18,43 @@ const STATUS_LABEL: Record<string, string> = {
   baja: 'Dado de baja',
 }
 
+const PAGE_SIZE = 20
+
 export function AssetsListPage() {
   const { membership } = useSession()
   const [assets, setAssets] = useState<AssetRecord[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [locations, setLocations] = useState<Location[]>([])
+  const [areas, setAreas] = useState<Area[]>([])
+  const [workers, setWorkers] = useState<Worker[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
-  const [editing, setEditing] = useState<AssetRecord | 'new' | null>(null)
+  const [creating, setCreating] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [pendingSync, setPendingSync] = useState(0)
+  const [page, setPage] = useState(1)
 
   const canWrite = can(membership?.role, 'inventory', 'write')
 
   async function refresh() {
     if (!membership) return
     setLoading(true)
-    const repaired = await repairLegacyAssets(membership.organizationId)
+    const orgId = membership.organizationId
+    const repaired = await repairLegacyAssets(orgId)
     if (repaired > 0) setToast(`Se recuperaron ${repaired} activo(s) guardados localmente antes del login.`)
-    const list = await listAssets(membership.organizationId)
+    const [list, cats, locs, ars, ws] = await Promise.all([
+      listAssets(orgId),
+      listCategories(orgId),
+      listLocations(orgId),
+      listAreas(orgId),
+      listWorkers(orgId),
+    ])
     setAssets(list)
+    setCategories(cats)
+    setLocations(locs)
+    setAreas(ars)
+    setWorkers(ws)
     setLoading(false)
     const sync = await syncOutbox()
     setPendingSync(sync.pending)
@@ -55,6 +71,10 @@ export function AssetsListPage() {
     return () => clearTimeout(t)
   }, [toast])
 
+  useEffect(() => {
+    setPage(1)
+  }, [search, statusFilter])
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     return assets.filter((a) => {
@@ -62,45 +82,76 @@ export function AssetsListPage() {
         !q ||
         a.name.toLowerCase().includes(q) ||
         a.code.toLowerCase().includes(q) ||
-        (a.responsible ?? '').toLowerCase().includes(q)
+        (a.responsible ?? '').toLowerCase().includes(q) ||
+        (a.serial ?? '').toLowerCase().includes(q)
       const matchesStatus = !statusFilter || a.status === statusFilter
       return matchesSearch && matchesStatus
     })
   }, [assets, search, statusFilter])
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
   async function handleCreate(input: AssetInput) {
     if (!membership) return
     await createAsset(membership.organizationId, input)
-    setEditing(null)
+    setCreating(false)
     await refresh()
   }
 
-  async function handleUpdate(existing: AssetRecord, input: AssetInput) {
-    await updateAsset(existing, input)
-    setEditing(null)
-    await refresh()
+  function exportCsv() {
+    const header = ['Codigo', 'Nombre', 'Categoria', 'Estado', 'Responsable', 'Ubicacion', 'Serial', 'Costo']
+    const rows = filtered.map((a) => [a.code, a.name, a.category, STATUS_LABEL[a.status] ?? a.status, a.responsible ?? '', a.location ?? '', a.serial ?? '', a.cost ?? ''])
+    const csv = [header, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+    downloadBlob(blob, `activos-${Date.now()}.csv`)
   }
 
-  async function handleDelete(record: AssetRecord) {
-    if (!confirm(`Eliminar el activo "${record.name}" (${record.code})? Esta accion no se puede deshacer.`)) return
-    await deleteAsset(record)
-    await refresh()
+  async function exportXlsx() {
+    const columns = [
+      { header: 'Código', cell: (a: AssetRecord) => a.code },
+      { header: 'Nombre', cell: (a: AssetRecord) => a.name },
+      { header: 'Categoría', cell: (a: AssetRecord) => a.category },
+      { header: 'Estado', cell: (a: AssetRecord) => STATUS_LABEL[a.status] ?? a.status },
+      { header: 'Responsable', cell: (a: AssetRecord) => a.responsible ?? '' },
+      { header: 'Ubicación', cell: (a: AssetRecord) => a.location ?? '' },
+      { header: 'Serial', cell: (a: AssetRecord) => a.serial ?? '' },
+      { header: 'Costo', cell: (a: AssetRecord) => a.cost ?? 0 },
+    ]
+    await writeXlsxFile(filtered, { columns }).toFile(`activos-${Date.now()}.xlsx`)
+  }
+
+  function exportPdf() {
+    const doc = new jsPDF()
+    doc.text('Inventario de activos - UNOP TI Hub', 14, 14)
+    autoTable(doc, {
+      startY: 20,
+      head: [['Código', 'Nombre', 'Categoría', 'Estado', 'Responsable', 'Ubicación']],
+      body: filtered.map((a) => [a.code, a.name, a.category, STATUS_LABEL[a.status] ?? a.status, a.responsible ?? '—', a.location ?? '—']),
+      styles: { fontSize: 8 },
+    })
+    doc.save(`activos-${Date.now()}.pdf`)
   }
 
   return (
     <div>
       <div className="app-topbar">
         <h2 style={{ margin: 0 }}>Inventario y activos</h2>
-        {canWrite && (
-          <button className="btn" onClick={() => setEditing('new')}>
-            Registrar activo
-          </button>
-        )}
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <button className="btn secondary" onClick={exportCsv}>CSV</button>
+          <button className="btn secondary" onClick={() => void exportXlsx()}>Excel</button>
+          <button className="btn secondary" onClick={exportPdf}>PDF</button>
+          {canWrite && (
+            <button className="btn" onClick={() => setCreating(true)}>
+              Registrar activo
+            </button>
+          )}
+        </div>
       </div>
 
       {pendingSync > 0 && (
         <div className="card" style={{ marginBottom: '1rem', color: 'var(--warning)' }}>
-          {pendingSync} cambio(s) pendientes de sincronizar con Supabase (sin conexion o error previo).
+          {pendingSync} cambio(s) pendientes de sincronizar con Supabase (sin conexión o error previo).
         </div>
       )}
 
@@ -109,7 +160,7 @@ export function AssetsListPage() {
           <label htmlFor="search">Buscar</label>
           <input
             id="search"
-            placeholder="Nombre, codigo o responsable"
+            placeholder="Nombre, código, serial o responsable"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -127,66 +178,94 @@ export function AssetsListPage() {
         </div>
       </div>
 
-      <div className="card table-wrap">
-        {loading ? (
-          <p>Cargando...</p>
-        ) : filtered.length === 0 ? (
-          <div className="empty-state">
-            {assets.length === 0
-              ? 'Todavia no hay activos registrados en esta organizacion.'
-              : 'Ningun activo coincide con la busqueda/filtro actual.'}
-          </div>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Codigo</th>
-                <th>Nombre</th>
-                <th>Categoria</th>
-                <th>Estado</th>
-                <th>Responsable</th>
-                <th>Ubicacion</th>
-                {canWrite && <th>Acciones</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((asset) => (
-                <tr key={asset.id}>
-                  <td>{asset.code}</td>
-                  <td>{asset.name}</td>
-                  <td>{asset.category}</td>
-                  <td>
-                    <span className="badge">{STATUS_LABEL[asset.status] ?? asset.status}</span>
-                  </td>
-                  <td>{asset.responsible || '—'}</td>
-                  <td>{asset.location || '—'}</td>
-                  {canWrite && (
-                    <td style={{ display: 'flex', gap: '0.4rem' }}>
-                      <button className="btn secondary" onClick={() => setEditing(asset)}>
-                        Editar
-                      </button>
-                      <button className="btn danger" onClick={() => void handleDelete(asset)}>
-                        Eliminar
-                      </button>
-                    </td>
-                  )}
+      {loading ? (
+        <p>Cargando...</p>
+      ) : filtered.length === 0 ? (
+        <div className="card empty-state">
+          {assets.length === 0
+            ? 'Todavía no hay activos registrados en esta organización.'
+            : 'Ningún activo coincide con la búsqueda/filtro actual.'}
+        </div>
+      ) : (
+        <>
+          <div className="card table-wrap asset-table-desktop">
+            <table>
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Nombre</th>
+                  <th>Categoría</th>
+                  <th>Estado</th>
+                  <th>Responsable</th>
+                  <th>Ubicación</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+              </thead>
+              <tbody>
+                {pageItems.map((asset) => (
+                  <tr key={asset.id}>
+                    <td><Link to={`/inventario/${asset.id}`}>{asset.code}</Link></td>
+                    <td>{asset.name}</td>
+                    <td>{asset.category}</td>
+                    <td><span className="badge">{STATUS_LABEL[asset.status] ?? asset.status}</span></td>
+                    <td>{asset.responsible || '—'}</td>
+                    <td>{asset.location || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-      {editing && membership && (
+          <div className="asset-cards-mobile">
+            {pageItems.map((asset) => (
+              <Link to={`/inventario/${asset.id}`} key={asset.id} className="card asset-card-link">
+                <strong>{asset.name}</strong>
+                <div style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>{asset.code}</div>
+                <div style={{ marginTop: '0.4rem' }}>
+                  <span className="badge">{STATUS_LABEL[asset.status] ?? asset.status}</span>
+                </div>
+                <div style={{ fontSize: '0.85rem', marginTop: '0.4rem' }}>
+                  {asset.location || 'Sin ubicación'} · {asset.responsible || 'Sin responsable'}
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginTop: '1rem' }}>
+            <button className="btn secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+              Anterior
+            </button>
+            <span style={{ alignSelf: 'center', color: 'var(--muted)' }}>
+              Página {page} de {totalPages} ({filtered.length} activos)
+            </span>
+            <button className="btn secondary" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
+              Siguiente
+            </button>
+          </div>
+        </>
+      )}
+
+      {creating && membership && (
         <AssetFormModal
           organizationId={membership.organizationId}
-          initial={editing === 'new' ? undefined : editing}
-          onCancel={() => setEditing(null)}
-          onSubmit={(input) => (editing === 'new' ? handleCreate(input) : handleUpdate(editing, input))}
+          categories={categories}
+          locations={locations}
+          areas={areas}
+          workers={workers}
+          onCancel={() => setCreating(false)}
+          onSubmit={handleCreate}
         />
       )}
 
       {toast && <div className="toast">{toast}</div>}
     </div>
   )
+}
+
+function downloadBlob(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = fileName
+  a.click()
+  URL.revokeObjectURL(url)
 }

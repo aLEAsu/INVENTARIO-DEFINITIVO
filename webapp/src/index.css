@@ -249,6 +249,20 @@ th { color: var(--muted); font-weight: 600; }
   padding: 2rem 1rem;
 }
 
+.asset-cards-mobile { display: none; }
+
+.asset-card-link {
+  display: block;
+  margin-bottom: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+@media (max-width: 640px) {
+  .asset-table-desktop { display: none; }
+  .asset-cards-mobile { display: block; }
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;

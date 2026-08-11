@@ -16,72 +16,198 @@ export type Database = {
   }
   public: {
     Tables: {
+      areas: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          id: string
+          name: string
+          organization_id: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          name: string
+          organization_id: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+        }
+        Relationships: []
+      }
+      asset_assignments: {
+        Row: {
+          asset_id: string
+          assigned_at: string
+          assigned_by: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          organization_id: string
+          returned_at: string | null
+          worker_id: string
+        }
+        Insert: {
+          asset_id: string
+          assigned_at?: string
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          returned_at?: string | null
+          worker_id: string
+        }
+        Update: {
+          asset_id?: string
+          assigned_at?: string
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          returned_at?: string | null
+          worker_id?: string
+        }
+        Relationships: []
+      }
       assets: {
         Row: {
           acquisitionDate: string | null
           area: string | null
+          area_id: string | null
           brand: string | null
           category: string
+          category_id: string | null
           code: string
           condition: string | null
+          cost: number | null
           createdAt: string
+          deleted_at: string | null
           id: string
+          invoice_number: string | null
           location: string | null
+          location_id: string | null
           model: string | null
           name: string
           notes: string | null
           organization_id: string
+          provider: string | null
           responsible: string | null
           serial: string | null
           status: string
+          subcategory_id: string | null
           tag: string | null
           updatedAt: string
           user_id: string
           warrantyUntil: string | null
+          worker_id: string | null
         }
         Insert: {
           acquisitionDate?: string | null
           area?: string | null
+          area_id?: string | null
           brand?: string | null
           category: string
+          category_id?: string | null
           code: string
           condition?: string | null
+          cost?: number | null
           createdAt?: string
+          deleted_at?: string | null
           id?: string
+          invoice_number?: string | null
           location?: string | null
+          location_id?: string | null
           model?: string | null
           name: string
           notes?: string | null
           organization_id: string
+          provider?: string | null
           responsible?: string | null
           serial?: string | null
           status?: string
+          subcategory_id?: string | null
           tag?: string | null
           updatedAt?: string
           user_id?: string
           warrantyUntil?: string | null
+          worker_id?: string | null
         }
         Update: {
           acquisitionDate?: string | null
           area?: string | null
+          area_id?: string | null
           brand?: string | null
           category?: string
+          category_id?: string | null
           code?: string
           condition?: string | null
+          cost?: number | null
           createdAt?: string
+          deleted_at?: string | null
           id?: string
+          invoice_number?: string | null
           location?: string | null
+          location_id?: string | null
           model?: string | null
           name?: string
           notes?: string | null
           organization_id?: string
+          provider?: string | null
           responsible?: string | null
           serial?: string | null
           status?: string
+          subcategory_id?: string | null
           tag?: string | null
           updatedAt?: string
           user_id?: string
           warrantyUntil?: string | null
+          worker_id?: string | null
+        }
+        Relationships: []
+      }
+      attachments: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_type: string
+          file_name: string
+          file_path: string
+          id: string
+          mime_type: string | null
+          organization_id: string
+          size_bytes: number | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          file_name: string
+          file_path: string
+          id?: string
+          mime_type?: string | null
+          organization_id: string
+          size_bytes?: number | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          mime_type?: string | null
+          organization_id?: string
+          size_bytes?: number | null
+          uploaded_by?: string | null
         }
         Relationships: []
       }
@@ -145,6 +271,99 @@ export type Database = {
         }
         Relationships: []
       }
+      categories: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          id: string
+          name: string
+          organization_id: string
+          parent_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          parent_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          parent_id?: string | null
+        }
+        Relationships: []
+      }
+      inventory_items: {
+        Row: {
+          category: string | null
+          created_at: string
+          deleted_at: string | null
+          id: string
+          min_stock: number
+          name: string
+          organization_id: string
+          provider: string | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          min_stock?: number
+          name: string
+          organization_id: string
+          provider?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          min_stock?: number
+          name?: string
+          organization_id?: string
+          provider?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      locations: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          id: string
+          name: string
+          organization_id: string
+          site_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          site_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          site_id?: string | null
+        }
+        Relationships: []
+      }
       maintenance: {
         Row: {
           assetId: string
@@ -152,11 +371,15 @@ export type Database = {
           cost: number | null
           createdAt: string
           date: string
+          diagnosis: string | null
           id: string
+          next_due_date: string | null
           notes: string | null
           organization_id: string
+          parts_used: string | null
           provider: string | null
           status: string
+          technician: string | null
           type: string
           updatedAt: string
           user_id: string
@@ -167,11 +390,15 @@ export type Database = {
           cost?: number | null
           createdAt?: string
           date: string
+          diagnosis?: string | null
           id?: string
+          next_due_date?: string | null
           notes?: string | null
           organization_id: string
+          parts_used?: string | null
           provider?: string | null
           status?: string
+          technician?: string | null
           type: string
           updatedAt?: string
           user_id?: string
@@ -182,11 +409,15 @@ export type Database = {
           cost?: number | null
           createdAt?: string
           date?: string
+          diagnosis?: string | null
           id?: string
+          next_due_date?: string | null
           notes?: string | null
           organization_id?: string
+          parts_used?: string | null
           provider?: string | null
           status?: string
+          technician?: string | null
           type?: string
           updatedAt?: string
           user_id?: string
@@ -286,6 +517,75 @@ export type Database = {
         }
         Relationships: []
       }
+      physical_count_items: {
+        Row: {
+          asset_id: string
+          counted_at: string | null
+          counted_by: string | null
+          expected: boolean
+          found: boolean
+          id: string
+          notes: string | null
+          physical_count_id: string
+        }
+        Insert: {
+          asset_id: string
+          counted_at?: string | null
+          counted_by?: string | null
+          expected?: boolean
+          found?: boolean
+          id?: string
+          notes?: string | null
+          physical_count_id: string
+        }
+        Update: {
+          asset_id?: string
+          counted_at?: string | null
+          counted_by?: string | null
+          expected?: boolean
+          found?: boolean
+          id?: string
+          notes?: string | null
+          physical_count_id?: string
+        }
+        Relationships: []
+      }
+      physical_counts: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          closing_notes: string | null
+          id: string
+          opened_at: string
+          opened_by: string | null
+          organization_id: string
+          scope_location_id: string | null
+          status: string
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          closing_notes?: string | null
+          id?: string
+          opened_at?: string
+          opened_by?: string | null
+          organization_id: string
+          scope_location_id?: string | null
+          status?: string
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          closing_notes?: string | null
+          id?: string
+          opened_at?: string
+          opened_by?: string | null
+          organization_id?: string
+          scope_location_id?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -301,6 +601,123 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      sites: {
+        Row: {
+          address: string | null
+          created_at: string
+          deleted_at: string | null
+          id: string
+          name: string
+          organization_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          name: string
+          organization_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+        }
+        Relationships: []
+      }
+      stock_movements: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          item_id: string
+          movement_date: string
+          organization_id: string
+          quantity: number
+          reason: string | null
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_id: string
+          movement_date?: string
+          organization_id: string
+          quantity: number
+          reason?: string | null
+          type: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_id?: string
+          movement_date?: string
+          organization_id?: string
+          quantity?: number
+          reason?: string | null
+          type?: string
+        }
+        Relationships: []
+      }
+      workers: {
+        Row: {
+          area_id: string | null
+          birth_date: string | null
+          created_at: string
+          deleted_at: string | null
+          document: string | null
+          email: string | null
+          full_name: string
+          hire_date: string | null
+          id: string
+          location_id: string | null
+          organization_id: string
+          phone: string | null
+          position: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          area_id?: string | null
+          birth_date?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          document?: string | null
+          email?: string | null
+          full_name: string
+          hire_date?: string | null
+          id?: string
+          location_id?: string | null
+          organization_id: string
+          phone?: string | null
+          position?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          area_id?: string | null
+          birth_date?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          document?: string | null
+          email?: string | null
+          full_name?: string
+          hire_date?: string | null
+          id?: string
+          location_id?: string | null
+          organization_id?: string
+          phone?: string | null
+          position?: string | null
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }

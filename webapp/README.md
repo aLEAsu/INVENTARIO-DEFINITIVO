@@ -28,24 +28,55 @@ npm run test      # pruebas unitarias (Vitest)
 npm run lint      # oxlint
 ```
 
-## Qué incluye esta fase
+## Qué incluye (Fase 1 + Fase 2)
 
+**Fundaciones (Fase 1)**
 - Autenticación con Supabase Auth (email/contraseña) y contexto de sesión (`src/core/auth/`).
 - Modelo de organizaciones y roles (`owner`, `admin_ti`, `tecnico_ti`,
   `talento_humano`, `lector`, `colaborador`) con matriz de permisos en
   `src/core/rbac.ts`.
-- Inventario de activos con paridad funcional a la app legacy (alta, edición,
-  eliminación, búsqueda, filtro por estado) contra el modelo multi-organización,
-  con caché offline en IndexedDB (Dexie) y cola de sincronización (`outbox`).
 - Migración automática de la IndexedDB local existente (`unop-activo-db`,
   compartida con la app legacy) hacia el nuevo esquema tipado — ver
   `src/data/db.ts`.
+
+**Inventario completo (Fase 2)**
+- Catálogos estructurados: sedes, ubicaciones, áreas, categorías con
+  subcategorías (`/catalogos`).
+- Directorio mínimo de trabajadores reales (`/trabajadores`) usado como
+  responsable de cada activo (reemplaza el texto libre).
+- Activos: proveedor, factura, costo, categoría/subcategoría/ubicación/área/
+  responsable como catálogos reales, serial único por organización, búsqueda,
+  filtro, paginación, vista de tarjetas en móvil, exportación CSV/Excel/PDF.
+- Detalle de activo (`/inventario/:id`): historial inalterable (asignaciones +
+  mantenimientos + auditoría), adjuntos/fotos en Supabase Storage, código QR
+  para imprimir, asignación/devolución a trabajador, baja lógica (preserva
+  trazabilidad, ya no se borra en duro desde la UI).
+- Mantenimientos (`/inventario/mantenimientos`): preventivo/correctivo,
+  técnico, diagnóstico, repuestos, próxima fecha.
+- Consumibles y existencias (`/inventario/consumibles`): entradas/salidas,
+  alerta visual bajo el mínimo.
+- Inventario físico por QR (`/inventario/conteo-fisico`): sesión de conteo,
+  escaneo por cámara (`html5-qrcode`) o manual, diferencias en vivo, cierre
+  con acta.
+- Reportes (`/inventario/reportes`): por área/responsable/condición/estado,
+  exportables a PDF/Excel.
 - Tablero ejecutivo con conteos reales de activos por estado.
 
-Fuera de alcance en esta fase (llegan en fases siguientes, documentadas en el
-plan): adjuntos/fotos, QR/código de barras, stock de consumibles, inventario
-físico, exportaciones, trabajadores/cumpleaños/WhatsApp, incidentes, y el
-agente de monitoreo de puertos en Windows.
+**Decisión de seguridad**: se evaluó la librería `xlsx` (SheetJS) para
+exportar Excel y se descartó por tener 2 vulnerabilidades altas sin parche en
+su código de *parseo* (prototype pollution, ReDoS). Se usa `write-excel-file`
+en su lugar, que solo escribe archivos (no incluye parser, así que esos CVEs
+no aplican) — ver `npm audit` en este paquete para confirmar 0 vulnerabilidades.
+
+**Simplificación consciente**: los módulos nuevos de Fase 2 (catálogos,
+trabajadores, mantenimientos, consumibles, conteo físico, adjuntos) requieren
+conexión — no tienen caché offline ni cola de sincronización propia como
+`assets` (que sí la conserva de Fase 1). Si se necesita offline-first también
+para estos módulos, es un trabajo adicional a planear.
+
+Fuera de alcance (siguientes fases, documentadas en el plan): cumpleaños y
+notificaciones WhatsApp del módulo de Trabajadores, Incidentes, y el agente
+de monitoreo de puertos en Windows.
 
 ## Nota sobre la IndexedDB compartida con la app legacy
 

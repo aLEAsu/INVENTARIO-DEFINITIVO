@@ -5,7 +5,13 @@ import { can } from '../core/rbac'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Tablero', module: 'dashboard' as const },
-  { to: '/inventario', label: 'Inventario y Activos', module: 'inventory' as const },
+  { to: '/inventario', label: 'Activos', module: 'inventory' as const },
+  { to: '/inventario/mantenimientos', label: 'Mantenimientos', module: 'inventory' as const },
+  { to: '/inventario/consumibles', label: 'Consumibles', module: 'inventory' as const },
+  { to: '/inventario/conteo-fisico', label: 'Inventario físico', module: 'inventory' as const },
+  { to: '/inventario/reportes', label: 'Reportes', module: 'inventory' as const },
+  { to: '/catalogos', label: 'Catálogos', module: 'inventory' as const },
+  { to: '/trabajadores', label: 'Trabajadores', module: 'workers' as const },
 ]
 
 export function Layout({ children }: { children: ReactNode }) {

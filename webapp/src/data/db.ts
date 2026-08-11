@@ -20,6 +20,15 @@ export interface AssetRecord {
   notes?: string | null
   createdAt: string
   updatedAt: string
+  provider?: string | null
+  invoiceNumber?: string | null
+  cost?: number | null
+  categoryId?: string | null
+  subcategoryId?: string | null
+  locationId?: string | null
+  areaId?: string | null
+  workerId?: string | null
+  deletedAt?: string | null
 }
 
 export type OutboxTable = 'assets' | 'movements' | 'maintenance' | 'catalogs'

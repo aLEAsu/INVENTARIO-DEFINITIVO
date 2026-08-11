@@ -6,18 +6,26 @@ export interface AssetInput {
   name: string
   code: string
   category: string
+  categoryId?: string | null
+  subcategoryId?: string | null
   status: string
   brand?: string
   model?: string
   serial?: string
   tag?: string
   location?: string
+  locationId?: string | null
   area?: string
+  areaId?: string | null
   responsible?: string
+  workerId?: string | null
   condition?: string
   acquisitionDate?: string
   warrantyUntil?: string
   notes?: string
+  provider?: string
+  invoiceNumber?: string
+  cost?: number | null
 }
 
 function newId(): string {
@@ -45,6 +53,15 @@ function mapRowToRecord(row: Tables<'assets'>): AssetRecord {
     notes: row.notes,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
+    provider: row.provider,
+    invoiceNumber: row.invoice_number,
+    cost: row.cost,
+    categoryId: row.category_id,
+    subcategoryId: row.subcategory_id,
+    locationId: row.location_id,
+    areaId: row.area_id,
+    workerId: row.worker_id,
+    deletedAt: row.deleted_at,
   }
 }
 
@@ -69,6 +86,15 @@ function toSupabasePayload(record: AssetRecord) {
     notes: record.notes ?? null,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
+    provider: record.provider ?? null,
+    invoice_number: record.invoiceNumber ?? null,
+    cost: record.cost ?? null,
+    category_id: record.categoryId ?? null,
+    subcategory_id: record.subcategoryId ?? null,
+    location_id: record.locationId ?? null,
+    area_id: record.areaId ?? null,
+    worker_id: record.workerId ?? null,
+    deleted_at: record.deletedAt ?? null,
   }
 }
 
@@ -111,12 +137,14 @@ export async function repairLegacyAssets(organizationId: string): Promise<number
   return orphans.length
 }
 
+/** Lista activos NO dados de baja de la organizacion (mas recientes primero). */
 export async function listAssets(organizationId: string): Promise<AssetRecord[]> {
   if (navigator.onLine) {
     const { data, error } = await supabase
       .from('assets')
       .select('*')
       .eq('organization_id', organizationId)
+      .is('deleted_at', null)
       .order('createdAt', { ascending: false })
 
     if (!error && data) {
@@ -127,11 +155,33 @@ export async function listAssets(organizationId: string): Promise<AssetRecord[]>
   }
 
   const cached = await db.assets.where('organizationId').equals(organizationId).sortBy('createdAt')
-  return cached.reverse()
+  return cached.reverse().filter((a) => !a.deletedAt)
+}
+
+export async function getAsset(id: string): Promise<AssetRecord | undefined> {
+  if (navigator.onLine) {
+    const { data, error } = await supabase.from('assets').select('*').eq('id', id).maybeSingle()
+    if (!error && data) {
+      const record = mapRowToRecord(data)
+      await db.assets.put(record)
+      return record
+    }
+  }
+  return db.assets.get(id)
 }
 
 export async function isCodeTaken(organizationId: string, code: string, excludeId?: string): Promise<boolean> {
   const matches = await db.assets.where('organizationId').equals(organizationId).and((a) => a.code === code).toArray()
+  return matches.some((a) => a.id !== excludeId)
+}
+
+export async function isSerialTaken(organizationId: string, serial: string, excludeId?: string): Promise<boolean> {
+  if (!serial.trim()) return false
+  const matches = await db.assets
+    .where('organizationId')
+    .equals(organizationId)
+    .and((a) => (a.serial ?? '') === serial)
+    .toArray()
   return matches.some((a) => a.id !== excludeId)
 }
 
@@ -150,9 +200,12 @@ export async function updateAsset(existing: AssetRecord, patch: Partial<AssetInp
   return record
 }
 
-export async function deleteAsset(record: AssetRecord): Promise<void> {
-  await db.assets.delete(record.id)
-  await pushOrQueue('delete', record)
+/** Baja logica: preserva el registro y su trazabilidad (historial, auditoria). */
+export async function softDeleteAsset(record: AssetRecord): Promise<AssetRecord> {
+  const updated: AssetRecord = { ...record, status: 'baja', deletedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+  await db.assets.put(updated)
+  await pushOrQueue('upsert', updated)
+  return updated
 }
 
 export async function syncOutbox(): Promise<{ processed: number; pending: number; error?: string }> {
