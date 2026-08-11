@@ -98,27 +98,28 @@ export function IncidentReportsPage() {
 
   return (
     <div>
-      <h2 style={{ marginTop: 0 }}>Reportes de incidentes</h2>
+      <span className="eyebrow">Incidentes</span>
+      <h2>Reportes de incidentes</h2>
 
-      <div className="stat-grid">
-        <div className="card stat-card"><strong>{incidents.length}</strong><span>Novedades totales</span></div>
-        <div className="card stat-card"><strong>{avgAttentionHours ?? '—'}</strong><span>Horas promedio de atención</span></div>
-        <div className="card stat-card"><strong>{avgResolutionHours ?? '—'}</strong><span>Horas promedio de resolución</span></div>
-        <div className="card stat-card"><strong>{recurringAssets.length}</strong><span>Activos con reincidencia</span></div>
+      <div className="stat-grid" style={{ marginTop: '1.1rem' }}>
+        <div className="card stat-card"><div><strong>{incidents.length}</strong><span>Novedades totales</span></div></div>
+        <div className="card stat-card"><div><strong>{avgAttentionHours ?? '—'}</strong><span>Horas promedio de atención</span></div></div>
+        <div className="card stat-card"><div><strong>{avgResolutionHours ?? '—'}</strong><span>Horas promedio de resolución</span></div></div>
+        <div className="card stat-card"><div><strong>{recurringAssets.length}</strong><span>Activos con reincidencia</span></div></div>
       </div>
 
       <div className="card" style={{ marginBottom: '1rem' }}>
-        <div className="form-grid" style={{ marginBottom: '1rem' }}>
-          <div className="field">
+        <div className="cluster-between" style={{ marginBottom: '1rem', alignItems: 'flex-end' }}>
+          <div className="field" style={{ marginBottom: 0 }}>
             <label htmlFor="groupBy">Agrupar por</label>
             <select id="groupBy" value={group} onChange={(e) => setGroup(e.target.value as GroupKey)}>
               {Object.entries(GROUP_LABELS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
             </select>
           </div>
-        </div>
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-          <button className="btn secondary" onClick={exportPdf}>Exportar PDF</button>
-          <button className="btn secondary" onClick={() => void exportXlsx()}>Exportar Excel</button>
+          <div className="cluster">
+            <button className="btn secondary" onClick={exportPdf}>Exportar PDF</button>
+            <button className="btn secondary" onClick={() => void exportXlsx()}>Exportar Excel</button>
+          </div>
         </div>
         <table>
           <thead><tr><th>{GROUP_LABELS[group]}</th><th>Cantidad</th></tr></thead>
@@ -128,7 +129,7 @@ export function IncidentReportsPage() {
 
       {recurringAssets.length > 0 && (
         <div className="card">
-          <h3 style={{ marginTop: 0 }}>Activos con reincidencia (más de 1 novedad)</h3>
+          <h3>Activos con reincidencia (más de 1 novedad)</h3>
           <table>
             <thead><tr><th>Activo</th><th>Novedades</th></tr></thead>
             <tbody>{recurringAssets.map((r) => <tr key={r.label}><td>{r.label}</td><td>{r.count}</td></tr>)}</tbody>

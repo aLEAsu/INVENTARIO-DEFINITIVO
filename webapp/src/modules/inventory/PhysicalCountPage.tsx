@@ -104,9 +104,10 @@ export function PhysicalCountPage() {
   if (!count) {
     return (
       <div>
-        <h2 style={{ marginTop: 0 }}>Inventario físico</h2>
+        <span className="eyebrow">Inventario</span>
+        <h2>Inventario físico</h2>
         {canWrite ? (
-          <div className="card" style={{ maxWidth: 420 }}>
+          <div className="card" style={{ maxWidth: 420, marginTop: '1rem' }}>
             <p>Abrir una nueva sesión de conteo físico por escaneo de QR/código.</p>
             <div className="field">
               <label htmlFor="scopeLocation">Ubicación a contar (opcional)</label>
@@ -124,7 +125,7 @@ export function PhysicalCountPage() {
             </button>
           </div>
         ) : (
-          <p style={{ color: 'var(--muted)' }}>No tienes permiso para iniciar un conteo físico.</p>
+          <p className="text-muted" style={{ marginTop: '1rem' }}>No tienes permiso para iniciar un conteo físico.</p>
         )}
       </div>
     )
@@ -133,7 +134,10 @@ export function PhysicalCountPage() {
   return (
     <div>
       <div className="app-topbar">
-        <h2 style={{ margin: 0 }}>Conteo físico en curso</h2>
+        <div>
+          <span className="eyebrow">Inventario</span>
+          <h2>Conteo físico en curso</h2>
+        </div>
         {canWrite && (
           <button className="btn danger" onClick={() => void handleClose()}>
             Cerrar conteo y generar acta
@@ -148,7 +152,7 @@ export function PhysicalCountPage() {
       </div>
 
       <div className="card" style={{ marginBottom: '1rem' }}>
-        <h3 style={{ marginTop: 0 }}>Escanear</h3>
+        <h3>Escanear</h3>
         {!scannerOn ? (
           <button className="btn secondary" onClick={() => void startCamera()}>
             Activar cámara
@@ -171,28 +175,34 @@ export function PhysicalCountPage() {
         <button className="btn" onClick={() => void handleScanCode(manualCode)}>
           Registrar
         </button>
-        {message && <p style={{ color: 'var(--muted)' }}>{message}</p>}
+        {message && <p className="text-muted text-small">{message}</p>}
       </div>
 
       <div className="card" style={{ marginBottom: '1rem' }}>
-        <h3 style={{ marginTop: 0 }}>Diferencias</h3>
+        <h3>Diferencias</h3>
         {missing.length === 0 && unexpected.length === 0 ? (
-          <p style={{ color: 'var(--muted)' }}>Sin diferencias por ahora.</p>
+          <p className="text-muted">Sin diferencias por ahora.</p>
         ) : (
-          <>
+          <ul className="divided-list">
             {missing.map((i) => (
-              <div key={i.id} style={{ color: 'var(--danger)' }}>Faltante: {i.assetCode} — {i.assetName}</div>
+              <li key={i.id} className="cluster">
+                <span className="badge badge-danger">Faltante</span>
+                <span className="text-mono">{i.assetCode}</span> — {i.assetName}
+              </li>
             ))}
             {unexpected.map((i) => (
-              <div key={i.id} style={{ color: 'var(--warning)' }}>Fuera de lugar: {i.assetCode} — {i.assetName}</div>
+              <li key={i.id} className="cluster">
+                <span className="badge badge-warning">Fuera de lugar</span>
+                <span className="text-mono">{i.assetCode}</span> — {i.assetName}
+              </li>
             ))}
-          </>
+          </ul>
         )}
       </div>
 
       {canWrite && (
         <div className="card">
-          <h3 style={{ marginTop: 0 }}>Acta de cierre</h3>
+          <h3>Acta de cierre</h3>
           <div className="field">
             <label htmlFor="closingNotes">Notas / observaciones del conteo</label>
             <textarea id="closingNotes" rows={3} value={closingNotes} onChange={(e) => setClosingNotes(e.target.value)} />

@@ -17,6 +17,15 @@ const STATUS_LABEL: Record<string, string> = {
   en_espera: 'En espera', resuelto: 'Resuelto', cerrado: 'Cerrado', reabierto: 'Reabierto',
 }
 
+const STATUS_BADGE: Record<string, string> = {
+  nuevo: 'badge-info', clasificado: 'badge-info', en_progreso: 'badge-warning',
+  en_espera: 'badge-warning', resuelto: 'badge-success', cerrado: 'badge-neutral', reabierto: 'badge-danger',
+}
+
+const PRIORITY_BADGE: Record<string, string> = {
+  P1: 'badge-danger', P2: 'badge-warning', P3: 'badge-info', P4: 'badge-neutral',
+}
+
 const PAGE_SIZE = 20
 
 export function IncidentsListPage() {
@@ -85,7 +94,10 @@ export function IncidentsListPage() {
   return (
     <div>
       <div className="app-topbar">
-        <h2 style={{ margin: 0 }}>Incidentes y novedades</h2>
+        <div>
+          <span className="eyebrow">Incidentes</span>
+          <h2>Incidentes y novedades</h2>
+        </div>
         {canWrite && (
           <button className="btn" onClick={() => setCreating(true)}>
             Reportar novedad
@@ -136,11 +148,11 @@ export function IncidentsListPage() {
             <tbody>
               {pageItems.map((i) => (
                 <tr key={i.id}>
-                  <td><Link to={`/incidentes/${i.id}`}>{i.folio}</Link></td>
+                  <td><Link to={`/incidentes/${i.id}`} className="text-mono">{i.folio}</Link></td>
                   <td>{i.title}</td>
                   <td>{TYPE_LABEL[i.type] ?? i.type}</td>
-                  <td><span className="badge">{i.priority}</span></td>
-                  <td><span className="badge">{STATUS_LABEL[i.status] ?? i.status}</span></td>
+                  <td><span className={`badge ${PRIORITY_BADGE[i.priority] ?? 'badge-neutral'}`}>{i.priority}</span></td>
+                  <td><span className={`badge ${STATUS_BADGE[i.status] ?? 'badge-neutral'}`}>{STATUS_LABEL[i.status] ?? i.status}</span></td>
                   <td>{new Date(i.created_at).toLocaleDateString('es-CO')}</td>
                 </tr>
               ))}
@@ -150,9 +162,9 @@ export function IncidentsListPage() {
       </div>
 
       {filtered.length > 0 && (
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginTop: '1rem' }}>
+        <div className="pagination">
           <button className="btn secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Anterior</button>
-          <span style={{ alignSelf: 'center', color: 'var(--muted)' }}>Página {page} de {totalPages} ({filtered.length})</span>
+          <span>Página {page} de {totalPages} ({filtered.length})</span>
           <button className="btn secondary" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Siguiente</button>
         </div>
       )}

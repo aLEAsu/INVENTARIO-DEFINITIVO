@@ -15,6 +15,20 @@ import { listAreas, listCategories, listLocations, type Area, type Category, typ
 
 const ACTION_LABEL: Record<string, string> = { insert: 'Alta', update: 'Actualización', delete: 'Eliminación' }
 
+const STATUS_LABEL: Record<string, string> = {
+  activo: 'Activo',
+  asignado: 'Asignado',
+  mantenimiento: 'Mantenimiento',
+  baja: 'Dado de baja',
+}
+
+const STATUS_BADGE: Record<string, string> = {
+  activo: 'badge-success',
+  asignado: 'badge-info',
+  mantenimiento: 'badge-warning',
+  baja: 'badge-neutral',
+}
+
 export function AssetDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -152,11 +166,12 @@ export function AssetDetailPage() {
     <div>
       <div className="app-topbar">
         <div>
-          <h2 style={{ margin: 0 }}>{asset.name}</h2>
-          <span style={{ color: 'var(--muted)' }}>{asset.code}</span>
+          <span className="eyebrow">Activo</span>
+          <h2>{asset.name}</h2>
+          <span className="text-muted text-mono">{asset.code}</span>
         </div>
         {canWrite && (
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div className="cluster">
             <button className="btn secondary" onClick={() => setEditing(true)}>
               Editar
             </button>
@@ -171,8 +186,8 @@ export function AssetDetailPage() {
 
       <div className="stat-grid">
         <div className="card">
-          <h3 style={{ marginTop: 0 }}>Información general</h3>
-          <p><strong>Estado:</strong> {asset.status}</p>
+          <h3>Información general</h3>
+          <p><strong>Estado:</strong> <span className={`badge ${STATUS_BADGE[asset.status] ?? 'badge-neutral'}`}>{STATUS_LABEL[asset.status] ?? asset.status}</span></p>
           <p><strong>Categoría:</strong> {asset.category || '—'}</p>
           <p><strong>Ubicación:</strong> {asset.location || '—'}</p>
           <p><strong>Área:</strong> {asset.area || '—'}</p>
@@ -187,10 +202,10 @@ export function AssetDetailPage() {
         </div>
 
         <div className="card" style={{ textAlign: 'center' }}>
-          <h3 style={{ marginTop: 0 }}>Código QR</h3>
+          <h3>Código QR</h3>
           {qrDataUrl && <img src={qrDataUrl} alt={`QR ${asset.code}`} style={{ maxWidth: 180 }} />}
           <div>
-            <button className="btn secondary" onClick={handlePrintQr} style={{ marginTop: '0.5rem' }}>
+            <button className="btn secondary btn-sm" onClick={handlePrintQr} style={{ marginTop: '0.5rem' }}>
               Imprimir
             </button>
           </div>
@@ -198,7 +213,7 @@ export function AssetDetailPage() {
 
         {canWrite && (
           <div className="card">
-            <h3 style={{ marginTop: 0 }}>Asignación</h3>
+            <h3>Asignación</h3>
             {openAssignment ? (
               <>
                 <p>Asignado a <strong>{workers.find((w) => w.id === asset.workerId)?.full_name ?? asset.responsible}</strong></p>
@@ -229,25 +244,25 @@ export function AssetDetailPage() {
       </div>
 
       <div className="card" style={{ marginBottom: '1rem' }}>
-        <h3 style={{ marginTop: 0 }}>Adjuntos y fotografías</h3>
+        <h3>Adjuntos y fotografías</h3>
         {canWrite && (
-          <div style={{ marginBottom: '0.75rem' }}>
+          <div className="cluster" style={{ marginBottom: '0.75rem' }}>
             <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={(e) => void handleUpload(e)} disabled={uploading} />
-            {uploading && <span style={{ marginLeft: '0.5rem', color: 'var(--muted)' }}>Subiendo...</span>}
+            {uploading && <span className="text-muted text-small">Subiendo...</span>}
           </div>
         )}
-        {error && <p style={{ color: 'var(--danger)' }}>{error}</p>}
+        {error && <p className="text-danger text-small">{error}</p>}
         {attachments.length === 0 ? (
-          <p style={{ color: 'var(--muted)' }}>Sin adjuntos todavía.</p>
+          <p className="text-muted">Sin adjuntos todavía.</p>
         ) : (
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+          <ul className="divided-list">
             {attachments.map((att) => (
-              <li key={att.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.4rem 0', borderBottom: '1px solid var(--line)' }}>
-                <button className="btn secondary" onClick={() => void handleViewAttachment(att)}>
+              <li key={att.id} className="cluster-between">
+                <button className="btn secondary btn-sm" onClick={() => void handleViewAttachment(att)}>
                   {att.file_name}
                 </button>
                 {canWrite && (
-                  <button className="btn danger" onClick={() => void handleDeleteAttachment(att)}>
+                  <button className="btn danger btn-sm" onClick={() => void handleDeleteAttachment(att)}>
                     Eliminar
                   </button>
                 )}
@@ -258,14 +273,14 @@ export function AssetDetailPage() {
       </div>
 
       <div className="card">
-        <h3 style={{ marginTop: 0 }}>Historial (inalterable)</h3>
+        <h3>Historial (inalterable)</h3>
         {timeline.length === 0 ? (
-          <p style={{ color: 'var(--muted)' }}>Sin movimientos registrados.</p>
+          <p className="text-muted">Sin movimientos registrados.</p>
         ) : (
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+          <ul className="divided-list">
             {timeline.map((t, i) => (
-              <li key={i} style={{ padding: '0.4rem 0', borderBottom: '1px solid var(--line)' }}>
-                <span style={{ color: 'var(--muted)', fontSize: '0.82rem' }}>{new Date(t.date).toLocaleString('es-CO')}</span>
+              <li key={i}>
+                <span className="text-muted text-small">{new Date(t.date).toLocaleString('es-CO')}</span>
                 <div>{t.label}</div>
               </li>
             ))}

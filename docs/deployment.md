@@ -54,14 +54,6 @@ bucket S3+CloudFront, o un servidor IIS/nginx propio de la clínica). Checklist:
 - [ ] Backups automáticos de Supabase activos (plan Pro+ los incluye; en
       Free, exportar manualmente antes de cambios grandes — ver `runbook.md`).
 
-## App legacy (`index.html`, `app.js`)
-
-Sigue sirviéndose igual que siempre (`Iniciar-Activo.bat` /
-`Start-Local.ps1` para desarrollo local). No requiere build ni variables de
-entorno — su configuración de Supabase se ingresa desde la UI y se guarda
-en el propio navegador. Convive con `webapp/` en el mismo repo; no
-comparten proceso de despliegue.
-
 ## Edge Functions
 
 Se despliegan con la Supabase CLI o el MCP de Supabase (como se hizo en

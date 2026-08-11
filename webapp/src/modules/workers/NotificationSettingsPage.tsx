@@ -23,6 +23,20 @@ const STATUS_LABEL: Record<string, string> = {
   error: 'Error',
 }
 
+const STATUS_BADGE: Record<string, string> = {
+  pendiente: 'badge-warning',
+  enviado: 'badge-info',
+  entregado: 'badge-success',
+  leido: 'badge-success',
+  error: 'badge-danger',
+}
+
+const APPROVAL_BADGE: Record<string, string> = {
+  pendiente: 'badge-warning',
+  aprobada: 'badge-success',
+  rechazada: 'badge-danger',
+}
+
 export function NotificationSettingsPage() {
   const { membership } = useSession()
   const canManage = can(membership?.role, 'workers', 'admin')
@@ -97,13 +111,14 @@ export function NotificationSettingsPage() {
   }
 
   if (!canManage) {
-    return <p style={{ color: 'var(--muted)' }}>Solo owner/admin_ti pueden configurar notificaciones.</p>
+    return <p className="text-muted">Solo owner/admin_ti pueden configurar notificaciones.</p>
   }
 
   return (
     <div>
-      <h2 style={{ marginTop: 0 }}>Notificaciones de cumpleaños</h2>
-      <div className="card" style={{ marginBottom: '1rem', color: 'var(--muted)' }}>
+      <span className="eyebrow">Talento humano</span>
+      <h2>Notificaciones de cumpleaños</h2>
+      <div className="notice notice-info" style={{ marginTop: '1.1rem' }}>
         El envío real por WhatsApp está en <strong>modo simulación</strong> hasta que se configuren las
         credenciales de Meta (ver docs/whatsapp-setup.md). Mientras tanto, cada envío queda registrado
         igual en el historial, marcado como simulado.
@@ -111,7 +126,7 @@ export function NotificationSettingsPage() {
 
       <div className="stat-grid">
         <form className="card" onSubmit={handleSaveSettings}>
-          <h3 style={{ marginTop: 0 }}>Configuración</h3>
+          <h3>Configuración</h3>
           <div className="field">
             <label htmlFor="sendHour">Hora de envío (America/Bogota)</label>
             <input id="sendHour" type="number" min="0" max="23" value={sendHour} onChange={(e) => setSendHour(Number(e.target.value))} />
@@ -127,7 +142,7 @@ export function NotificationSettingsPage() {
         </form>
 
         <form className="card" onSubmit={handleAddRecipient}>
-          <h3 style={{ marginTop: 0 }}>Destinatarios WhatsApp</h3>
+          <h3>Destinatarios WhatsApp</h3>
           <div className="field">
             <label htmlFor="newPhone">Número (formato E.164)</label>
             <input id="newPhone" placeholder="+573001234567" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} />
@@ -136,13 +151,13 @@ export function NotificationSettingsPage() {
             <label htmlFor="newLabel">Etiqueta</label>
             <input id="newLabel" placeholder="Recursos Humanos" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
           </div>
-          {error && <p style={{ color: 'var(--danger)' }}>{error}</p>}
+          {error && <p className="text-danger text-small">{error}</p>}
           <button className="btn" type="submit">Agregar</button>
-          <ul style={{ listStyle: 'none', padding: 0, marginTop: '0.75rem' }}>
+          <ul className="divided-list" style={{ marginTop: '0.75rem' }}>
             {recipients.map((r) => (
-              <li key={r.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.3rem 0', borderBottom: '1px solid var(--line)' }}>
+              <li key={r.id} className="cluster-between">
                 <span>{r.phone_e164} {r.label && `(${r.label})`}</span>
-                <button type="button" className="btn secondary" onClick={() => void toggleRecipient(r.id, !r.active).then(refresh)}>
+                <button type="button" className="btn secondary btn-sm" onClick={() => void toggleRecipient(r.id, !r.active).then(refresh)}>
                   {r.active ? 'Desactivar' : 'Activar'}
                 </button>
               </li>
@@ -152,8 +167,8 @@ export function NotificationSettingsPage() {
       </div>
 
       <form className="card" onSubmit={handleAddTemplate} style={{ marginBottom: '1rem' }}>
-        <h3 style={{ marginTop: 0 }}>Plantillas de WhatsApp (metadata)</h3>
-        <p style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>
+        <h3>Plantillas de WhatsApp (metadata)</h3>
+        <p className="text-muted text-small">
           La plantilla real se crea y se aprueba en el panel de Meta Business. Aquí solo se registra
           para llevar el control de nombre/idioma/estado.
         </p>
@@ -168,25 +183,27 @@ export function NotificationSettingsPage() {
           </div>
         </div>
         <button className="btn" type="submit">Registrar plantilla</button>
-        <table style={{ marginTop: '0.75rem' }}>
-          <thead>
-            <tr><th>Nombre</th><th>Nombre en Meta</th><th>Idioma</th><th>Estado</th></tr>
-          </thead>
-          <tbody>
-            {templates.map((t) => (
-              <tr key={t.id}>
-                <td>{t.name}</td><td>{t.meta_template_name}</td><td>{t.language}</td>
-                <td><span className="badge">{t.approval_status}</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="table-wrap" style={{ marginTop: '0.75rem' }}>
+          <table>
+            <thead>
+              <tr><th>Nombre</th><th>Nombre en Meta</th><th>Idioma</th><th>Estado</th></tr>
+            </thead>
+            <tbody>
+              {templates.map((t) => (
+                <tr key={t.id}>
+                  <td>{t.name}</td><td>{t.meta_template_name}</td><td>{t.language}</td>
+                  <td><span className={`badge ${APPROVAL_BADGE[t.approval_status] ?? 'badge-neutral'}`}>{t.approval_status}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </form>
 
       <div className="card table-wrap">
-        <h3 style={{ marginTop: 0 }}>Historial de envíos</h3>
+        <h3>Historial de envíos</h3>
         {deliveries.length === 0 ? (
-          <p style={{ color: 'var(--muted)' }}>Todavía no hay envíos registrados.</p>
+          <p className="text-muted">Todavía no hay envíos registrados.</p>
         ) : (
           <table>
             <thead>
@@ -196,7 +213,7 @@ export function NotificationSettingsPage() {
               {deliveries.map((d) => (
                 <tr key={d.id}>
                   <td>{new Date(d.created_at).toLocaleString('es-CO')}</td>
-                  <td><span className="badge">{STATUS_LABEL[d.status] ?? d.status}</span></td>
+                  <td><span className={`badge ${STATUS_BADGE[d.status] ?? 'badge-neutral'}`}>{STATUS_LABEL[d.status] ?? d.status}</span></td>
                   <td>{d.retry_count}</td>
                   <td>{d.error_reason || '—'}</td>
                 </tr>

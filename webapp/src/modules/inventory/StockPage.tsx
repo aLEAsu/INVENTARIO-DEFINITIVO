@@ -39,7 +39,10 @@ export function StockPage() {
   return (
     <div>
       <div className="app-topbar">
-        <h2 style={{ margin: 0 }}>Consumibles y existencias</h2>
+        <div>
+          <span className="eyebrow">Inventario</span>
+          <h2>Consumibles y existencias</h2>
+        </div>
         {canWrite && (
           <button className="btn" onClick={() => setCreatingItem(true)}>
             Nuevo consumible
@@ -72,15 +75,17 @@ export function StockPage() {
                   <tr key={item.id}>
                     <td>{item.name}</td>
                     <td>{item.category || '—'}</td>
-                    <td style={low ? { color: 'var(--danger)', fontWeight: 600 } : undefined}>
-                      {stock} {item.unit}
-                      {low && ' ⚠'}
+                    <td>
+                      <span className="cluster" style={{ gap: '0.4rem' }}>
+                        {stock} {item.unit}
+                        {low && <span className="badge badge-danger">Bajo stock</span>}
+                      </span>
                     </td>
                     <td>{item.min_stock} {item.unit}</td>
                     <td>{item.provider || '—'}</td>
                     {canWrite && (
                       <td>
-                        <button className="btn secondary" onClick={() => setMovementFor(item)}>
+                        <button className="btn secondary btn-sm" onClick={() => setMovementFor(item)}>
                           Registrar movimiento
                         </button>
                       </td>
@@ -150,7 +155,7 @@ function NewItemModal({
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true">
       <form className="modal" onSubmit={handleSubmit}>
-        <h2 style={{ marginTop: 0 }}>Nuevo consumible</h2>
+        <h2>Nuevo consumible</h2>
         <div className="form-grid">
           <div className="field">
             <label htmlFor="iName">Nombre *</label>
@@ -218,7 +223,7 @@ function MovementModal({
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true">
       <form className="modal" onSubmit={handleSubmit}>
-        <h2 style={{ marginTop: 0 }}>Movimiento de {item.name}</h2>
+        <h2>Movimiento de {item.name}</h2>
         <div className="form-grid">
           <div className="field">
             <label htmlFor="movType">Tipo</label>
@@ -236,7 +241,7 @@ function MovementModal({
           <label htmlFor="movReason">Motivo</label>
           <input id="movReason" value={reason} onChange={(e) => setReason(e.target.value)} />
         </div>
-        {error && <p style={{ color: 'var(--danger)' }}>{error}</p>}
+        {error && <p className="text-danger text-small">{error}</p>}
         <div className="modal-actions">
           <button type="button" className="btn secondary" onClick={onCancel} disabled={saving}>Cancelar</button>
           <button type="submit" className="btn" disabled={saving}>{saving ? 'Guardando...' : 'Registrar'}</button>

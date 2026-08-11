@@ -6,6 +6,7 @@ import { listAssets } from '../../data/repositories/assetsRepo'
 import { createMaintenance, listMaintenance, updateMaintenanceStatus, type MaintenanceInput, type MaintenanceRecord } from '../../data/repositories/maintenanceRepo'
 
 const STATUS_LABEL: Record<string, string> = { pendiente: 'Pendiente', proceso: 'En proceso', completado: 'Completado' }
+const STATUS_BADGE: Record<string, string> = { pendiente: 'badge-warning', proceso: 'badge-info', completado: 'badge-success' }
 
 export function MaintenancePage() {
   const { membership } = useSession()
@@ -37,7 +38,10 @@ export function MaintenancePage() {
   return (
     <div>
       <div className="app-topbar">
-        <h2 style={{ margin: 0 }}>Mantenimientos</h2>
+        <div>
+          <span className="eyebrow">Inventario</span>
+          <h2>Mantenimientos</h2>
+        </div>
         {canWrite && (
           <button className="btn" onClick={() => setCreating(true)}>
             Registrar mantenimiento
@@ -73,11 +77,11 @@ export function MaintenancePage() {
                   <td>{m.technician || m.provider || '—'}</td>
                   <td>{m.diagnosis || '—'}</td>
                   <td>{m.next_due_date || '—'}</td>
-                  <td><span className="badge">{STATUS_LABEL[m.status] ?? m.status}</span></td>
+                  <td><span className={`badge ${STATUS_BADGE[m.status] ?? 'badge-neutral'}`}>{STATUS_LABEL[m.status] ?? m.status}</span></td>
                   {canWrite && (
                     <td>
                       {m.status !== 'completado' && (
-                        <button className="btn secondary" onClick={() => void handleComplete(m)}>
+                        <button className="btn secondary btn-sm" onClick={() => void handleComplete(m)}>
                           Marcar completado
                         </button>
                       )}
@@ -165,7 +169,7 @@ function MaintenanceFormModal({
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true">
       <form className="modal" onSubmit={handleSubmit}>
-        <h2 style={{ marginTop: 0 }}>Registrar mantenimiento</h2>
+        <h2>Registrar mantenimiento</h2>
         <div className="form-grid">
           <div className="field">
             <label htmlFor="mAsset">Activo *</label>
@@ -228,7 +232,7 @@ function MaintenanceFormModal({
           <label htmlFor="mNotes">Notas</label>
           <textarea id="mNotes" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
         </div>
-        {error && <p style={{ color: 'var(--danger)' }}>{error}</p>}
+        {error && <p className="text-danger text-small">{error}</p>}
         <div className="modal-actions">
           <button type="button" className="btn secondary" onClick={onCancel} disabled={saving}>
             Cancelar

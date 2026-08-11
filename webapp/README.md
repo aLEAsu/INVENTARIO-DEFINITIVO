@@ -1,10 +1,9 @@
 # UNOP TI Hub — webapp
 
-Frontend (React + TypeScript + Vite + PWA) del proyecto UNOP TI Hub.
-Convive con la app legacy (`../index.html`, `../app.js`) — ver `../README.md`
-para el contexto general. Estado final del proyecto: Fases 1-4 y 6
-completas (Módulo 3, agente de puertos Windows, no implementado por
-decisión del usuario). Documentación completa en [`../docs/`](../docs/),
+Frontend (React + TypeScript + Vite + PWA) del proyecto UNOP TI Hub. Ver
+`../README.md` para el contexto general. Estado final del proyecto: Fases
+1-4 y 6 completas (Módulo 3, agente de puertos Windows, no implementado
+por decisión del usuario). Documentación completa en [`../docs/`](../docs/),
 empezando por [`../docs/architecture.md`](../docs/architecture.md) y
 [`../docs/traceability-matrix.md`](../docs/traceability-matrix.md).
 

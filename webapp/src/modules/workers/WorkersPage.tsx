@@ -183,8 +183,11 @@ export function WorkersPage() {
   return (
     <div>
       <div className="app-topbar">
-        <h2 style={{ margin: 0 }}>Trabajadores</h2>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <div>
+          <span className="eyebrow">Talento humano</span>
+          <h2>Trabajadores</h2>
+        </div>
+        <div className="cluster">
           <button className="btn secondary" onClick={exportCsv}>
             Exportar CSV
           </button>
@@ -210,13 +213,13 @@ export function WorkersPage() {
 
       {importSummary && (
         <div className="card" style={{ marginBottom: '1rem' }}>
-          <strong>Resultado de la importación</strong>
-          <ul>
+          <h3>Resultado de la importación</h3>
+          <ul className="divided-list text-small">
             {importSummary.map((line, i) => (
               <li key={i}>{line}</li>
             ))}
           </ul>
-          <button className="btn secondary" onClick={() => setImportSummary(null)}>
+          <button className="btn secondary" style={{ marginTop: '0.75rem' }} onClick={() => setImportSummary(null)}>
             Cerrar
           </button>
         </div>
@@ -247,14 +250,14 @@ export function WorkersPage() {
                   <td>{areas.find((a) => a.id === w.area_id)?.name ?? '—'}</td>
                   <td>{locations.find((l) => l.id === w.location_id)?.name ?? '—'}</td>
                   <td>
-                    <span className="badge">{w.status === 'activo' ? 'Activo' : 'Inactivo'}</span>
+                    <span className={`badge ${w.status === 'activo' ? 'badge-success' : 'badge-neutral'}`}>{w.status === 'activo' ? 'Activo' : 'Inactivo'}</span>
                   </td>
                   {canWrite && (
-                    <td style={{ display: 'flex', gap: '0.4rem' }}>
-                      <button className="btn secondary" onClick={() => setEditing(w)}>
+                    <td className="cluster">
+                      <button className="btn secondary btn-sm" onClick={() => setEditing(w)}>
                         Editar
                       </button>
-                      <button className="btn danger" onClick={() => void handleDelete(w)}>
+                      <button className="btn danger btn-sm" onClick={() => void handleDelete(w)}>
                         Eliminar
                       </button>
                     </td>

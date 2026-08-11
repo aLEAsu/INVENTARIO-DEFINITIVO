@@ -118,7 +118,7 @@ export function AssetFormModal({ organizationId, initial, categories, locations,
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="asset-modal-title">
       <form className="modal" onSubmit={handleSubmit} style={{ maxWidth: 760 }}>
-        <h2 id="asset-modal-title" style={{ marginTop: 0 }}>
+        <h2 id="asset-modal-title">
           {initial ? 'Editar activo' : 'Registrar activo'}
         </h2>
 
@@ -265,7 +265,7 @@ export function AssetFormModal({ organizationId, initial, categories, locations,
           <textarea id="notes" rows={3} value={form.notes} onChange={(e) => set('notes', e.target.value)} />
         </div>
 
-        {error && <p style={{ color: 'var(--danger)' }}>{error}</p>}
+        {error && <p className="text-danger text-small">{error}</p>}
 
         <div className="modal-actions">
           <button type="button" className="btn secondary" onClick={onCancel} disabled={saving}>

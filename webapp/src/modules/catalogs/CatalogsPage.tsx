@@ -88,13 +88,14 @@ export function CatalogsPage() {
 
   return (
     <div>
-      <h2 style={{ marginTop: 0 }}>Catálogos</h2>
+      <span className="eyebrow">Inventario</span>
+      <h2>Catálogos</h2>
 
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+      <div className="tab-strip" style={{ marginTop: '1.1rem' }}>
         {TABS.map((t) => (
           <button
             key={t.key}
-            className={tab === t.key ? 'btn' : 'btn secondary'}
+            className={`tab${tab === t.key ? ' active' : ''}`}
             onClick={() => {
               setTab(t.key)
               setError(null)
@@ -139,7 +140,7 @@ export function CatalogsPage() {
               </div>
             )}
           </div>
-          {error && <p style={{ color: 'var(--danger)' }}>{error}</p>}
+          {error && <p className="text-danger text-small">{error}</p>}
           <button className="btn" onClick={() => void handleCreate()} disabled={!name.trim()}>
             Agregar
           </button>
@@ -211,11 +212,11 @@ function CatalogList({
           <tr key={r.id}>
             <td>
               {r.label}
-              {r.sub && <div style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>{r.sub}</div>}
+              {r.sub && <div className="text-muted text-small">{r.sub}</div>}
             </td>
             {canWrite && (
               <td>
-                <button className="btn danger" onClick={() => onDelete(r.id)}>
+                <button className="btn danger btn-sm" onClick={() => onDelete(r.id)}>
                   Eliminar
                 </button>
               </td>

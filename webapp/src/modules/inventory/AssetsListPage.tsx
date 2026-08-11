@@ -18,6 +18,13 @@ const STATUS_LABEL: Record<string, string> = {
   baja: 'Dado de baja',
 }
 
+const STATUS_BADGE: Record<string, string> = {
+  activo: 'badge-success',
+  asignado: 'badge-info',
+  mantenimiento: 'badge-warning',
+  baja: 'badge-neutral',
+}
+
 const PAGE_SIZE = 20
 
 export function AssetsListPage() {
@@ -136,8 +143,11 @@ export function AssetsListPage() {
   return (
     <div>
       <div className="app-topbar">
-        <h2 style={{ margin: 0 }}>Inventario y activos</h2>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <div>
+          <span className="eyebrow">Inventario</span>
+          <h2>Activos</h2>
+        </div>
+        <div className="cluster">
           <button className="btn secondary" onClick={exportCsv}>CSV</button>
           <button className="btn secondary" onClick={() => void exportXlsx()}>Excel</button>
           <button className="btn secondary" onClick={exportPdf}>PDF</button>
@@ -150,7 +160,7 @@ export function AssetsListPage() {
       </div>
 
       {pendingSync > 0 && (
-        <div className="card" style={{ marginBottom: '1rem', color: 'var(--warning)' }}>
+        <div className="notice">
           {pendingSync} cambio(s) pendientes de sincronizar con Supabase (sin conexión o error previo).
         </div>
       )}
@@ -203,10 +213,10 @@ export function AssetsListPage() {
               <tbody>
                 {pageItems.map((asset) => (
                   <tr key={asset.id}>
-                    <td><Link to={`/inventario/${asset.id}`}>{asset.code}</Link></td>
+                    <td><Link to={`/inventario/${asset.id}`} className="text-mono">{asset.code}</Link></td>
                     <td>{asset.name}</td>
                     <td>{asset.category}</td>
-                    <td><span className="badge">{STATUS_LABEL[asset.status] ?? asset.status}</span></td>
+                    <td><span className={`badge ${STATUS_BADGE[asset.status] ?? 'badge-neutral'}`}>{STATUS_LABEL[asset.status] ?? asset.status}</span></td>
                     <td>{asset.responsible || '—'}</td>
                     <td>{asset.location || '—'}</td>
                   </tr>
@@ -219,22 +229,22 @@ export function AssetsListPage() {
             {pageItems.map((asset) => (
               <Link to={`/inventario/${asset.id}`} key={asset.id} className="card asset-card-link">
                 <strong>{asset.name}</strong>
-                <div style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>{asset.code}</div>
+                <div className="text-muted text-small text-mono">{asset.code}</div>
                 <div style={{ marginTop: '0.4rem' }}>
-                  <span className="badge">{STATUS_LABEL[asset.status] ?? asset.status}</span>
+                  <span className={`badge ${STATUS_BADGE[asset.status] ?? 'badge-neutral'}`}>{STATUS_LABEL[asset.status] ?? asset.status}</span>
                 </div>
-                <div style={{ fontSize: '0.85rem', marginTop: '0.4rem' }}>
+                <div className="text-small" style={{ marginTop: '0.4rem' }}>
                   {asset.location || 'Sin ubicación'} · {asset.responsible || 'Sin responsable'}
                 </div>
               </Link>
             ))}
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginTop: '1rem' }}>
+          <div className="pagination">
             <button className="btn secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
               Anterior
             </button>
-            <span style={{ alignSelf: 'center', color: 'var(--muted)' }}>
+            <span>
               Página {page} de {totalPages} ({filtered.length} activos)
             </span>
             <button className="btn secondary" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>

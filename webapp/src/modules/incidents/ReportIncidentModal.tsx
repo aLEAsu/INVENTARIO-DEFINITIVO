@@ -66,7 +66,7 @@ export function ReportIncidentModal({ categories, services, assets, workers, onC
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true">
       <form className="modal" onSubmit={handleSubmit} style={{ maxWidth: 640 }}>
-        <h2 style={{ marginTop: 0 }}>Reportar novedad</h2>
+        <h2>Reportar novedad</h2>
         <div className="form-grid">
           <div className="field">
             <label htmlFor="iType">Tipo</label>
@@ -144,7 +144,7 @@ export function ReportIncidentModal({ categories, services, assets, workers, onC
           <label htmlFor="iDescription">Descripción</label>
           <textarea id="iDescription" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
         </div>
-        {error && <p style={{ color: 'var(--danger)' }}>{error}</p>}
+        {error && <p className="text-danger text-small">{error}</p>}
         <div className="modal-actions">
           <button type="button" className="btn secondary" onClick={onCancel} disabled={saving}>
             Cancelar

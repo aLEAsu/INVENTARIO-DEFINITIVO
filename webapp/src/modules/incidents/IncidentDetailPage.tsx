@@ -19,6 +19,13 @@ const STATUS_LABEL: Record<string, string> = {
   nuevo: 'Nuevo', clasificado: 'Clasificado', en_progreso: 'En progreso',
   en_espera: 'En espera', resuelto: 'Resuelto', cerrado: 'Cerrado', reabierto: 'Reabierto',
 }
+const STATUS_BADGE: Record<string, string> = {
+  nuevo: 'badge-info', clasificado: 'badge-info', en_progreso: 'badge-warning',
+  en_espera: 'badge-warning', resuelto: 'badge-success', cerrado: 'badge-neutral', reabierto: 'badge-danger',
+}
+const PRIORITY_BADGE: Record<string, string> = {
+  P1: 'badge-danger', P2: 'badge-warning', P3: 'badge-info', P4: 'badge-neutral',
+}
 
 export function IncidentDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -160,7 +167,12 @@ export function IncidentDetailPage() {
     <div>
       <div className="app-topbar">
         <div>
-          <h2 style={{ margin: 0 }}>{incident.folio} — {incident.title}</h2>
+          <span className="eyebrow text-mono">{incident.folio}</span>
+          <h2>{incident.title}</h2>
+          <div className="cluster" style={{ marginTop: '0.4rem' }}>
+            <span className={`badge ${PRIORITY_BADGE[incident.priority] ?? 'badge-neutral'}`}>{incident.priority}</span>
+            <span className={`badge ${STATUS_BADGE[incident.status] ?? 'badge-neutral'}`}>{STATUS_LABEL[incident.status] ?? incident.status}</span>
+          </div>
         </div>
         <button className="btn secondary" onClick={() => void toggleSubscription()}>
           {subscribed ? 'Dejar de seguir' : 'Seguir este incidente'}
@@ -168,14 +180,14 @@ export function IncidentDetailPage() {
       </div>
 
       {isCritical && (
-        <div className="card" style={{ marginBottom: '1rem', borderColor: 'var(--danger)', color: 'var(--danger)' }}>
+        <div className="card card-alert" style={{ marginBottom: '1rem' }}>
           Incidente {incident.priority} — completa causa raíz, solución y acciones preventivas antes de cerrarlo.
         </div>
       )}
 
       <div className="stat-grid">
         <div className="card">
-          <h3 style={{ marginTop: 0 }}>Clasificación</h3>
+          <h3>Clasificación</h3>
           <div className="field">
             <label htmlFor="status">Estado</label>
             <select id="status" value={incident.status} disabled={!canEdit} onChange={(e) => void handleStatusChange(e.target.value)}>
@@ -197,7 +209,7 @@ export function IncidentDetailPage() {
 
         {isCritical && canEdit && (
           <div className="card">
-            <h3 style={{ marginTop: 0 }}>Seguimiento crítico</h3>
+            <h3>Seguimiento crítico</h3>
             <div className="field">
               <label htmlFor="rootCause">Causa raíz</label>
               <textarea id="rootCause" rows={2} value={rootCause} onChange={(e) => setRootCause(e.target.value)} />
@@ -231,17 +243,19 @@ export function IncidentDetailPage() {
       </div>
 
       <div className="card" style={{ marginBottom: '1rem' }}>
-        <h3 style={{ marginTop: 0 }}>Adjuntos</h3>
+        <h3>Adjuntos</h3>
         {canComment && <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={(e) => void handleUpload(e)} />}
-        {uploadError && <p style={{ color: 'var(--danger)' }}>{uploadError}</p>}
-        <ul style={{ listStyle: 'none', padding: 0, marginTop: '0.5rem' }}>
-          {attachments.map((a) => <li key={a.id}>{a.file_name}</li>)}
-        </ul>
+        {uploadError && <p className="text-danger text-small">{uploadError}</p>}
+        {attachments.length > 0 && (
+          <ul className="divided-list" style={{ marginTop: '0.5rem' }}>
+            {attachments.map((a) => <li key={a.id}>{a.file_name}</li>)}
+          </ul>
+        )}
       </div>
 
       {canEdit && (
         <div className="card" style={{ marginBottom: '1rem' }}>
-          <h3 style={{ marginTop: 0 }}>Acción preventiva/correctiva</h3>
+          <h3>Acción preventiva/correctiva</h3>
           <div className="form-grid">
             <div className="field">
               <label htmlFor="actionType">Tipo</label>
@@ -257,9 +271,9 @@ export function IncidentDetailPage() {
           </div>
           <button className="btn secondary" onClick={() => void handleAddAction()}>Registrar acción</button>
           {actions.filter((a) => a.status === 'pendiente').map((a) => (
-            <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem' }}>
+            <div key={a.id} className="cluster-between" style={{ marginTop: '0.5rem' }}>
               <span>{a.description}</span>
-              <button className="btn secondary" onClick={() => void completeIncidentAction(a.id).then(refresh)}>Marcar completada</button>
+              <button className="btn secondary btn-sm" onClick={() => void completeIncidentAction(a.id).then(refresh)}>Marcar completada</button>
             </div>
           ))}
         </div>
@@ -267,7 +281,7 @@ export function IncidentDetailPage() {
 
       {canComment && (
         <div className="card" style={{ marginBottom: '1rem' }}>
-          <h3 style={{ marginTop: 0 }}>Agregar comentario</h3>
+          <h3>Agregar comentario</h3>
           <div className="field">
             <label htmlFor="comment">Comentario</label>
             <textarea id="comment" rows={2} value={comment} onChange={(e) => setComment(e.target.value)} />
@@ -286,15 +300,15 @@ export function IncidentDetailPage() {
       )}
 
       <div className="card">
-        <h3 style={{ marginTop: 0 }}>Bitácora</h3>
+        <h3>Bitácora</h3>
         {timeline.length === 0 ? (
-          <p style={{ color: 'var(--muted)' }}>Sin actividad todavía.</p>
+          <p className="text-muted">Sin actividad todavía.</p>
         ) : (
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+          <ul className="divided-list">
             {timeline.map((t, i) => (
-              <li key={i} style={{ padding: '0.4rem 0', borderBottom: '1px solid var(--line)' }}>
-                <span style={{ color: 'var(--muted)', fontSize: '0.82rem' }}>{new Date(t.date).toLocaleString('es-CO')}</span>
-                {t.kind === 'interno' && <span className="badge" style={{ marginLeft: '0.4rem' }}>Interno</span>}
+              <li key={i}>
+                <span className="text-muted text-small">{new Date(t.date).toLocaleString('es-CO')}</span>
+                {t.kind === 'interno' && <span className="badge badge-neutral" style={{ marginLeft: '0.4rem' }}>Interno</span>}
                 <div>{t.label}</div>
               </li>
             ))}

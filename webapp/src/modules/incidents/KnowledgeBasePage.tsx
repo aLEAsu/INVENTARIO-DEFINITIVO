@@ -37,21 +37,24 @@ export function KnowledgeBasePage() {
   return (
     <div>
       <div className="app-topbar">
-        <h2 style={{ margin: 0 }}>Base de conocimiento</h2>
+        <div>
+          <span className="eyebrow">Incidentes</span>
+          <h2>Base de conocimiento</h2>
+        </div>
         {canWrite && <button className="btn" onClick={() => setCreating(true)}>Nuevo artículo</button>}
       </div>
 
       <div className="stat-grid">
         <div className="card">
-          <h3 style={{ marginTop: 0 }}>Artículos</h3>
+          <h3>Artículos</h3>
           {articles.length === 0 ? (
-            <p style={{ color: 'var(--muted)' }}>Todavía no hay artículos.</p>
+            <p className="text-muted">Todavía no hay artículos.</p>
           ) : (
-            <ul style={{ listStyle: 'none', padding: 0 }}>
+            <ul className="divided-list">
               {articles.map((a) => (
-                <li key={a.id} style={{ padding: '0.4rem 0', borderBottom: '1px solid var(--line)' }}>
-                  <button className="btn secondary" onClick={() => setSelected(a)} style={{ width: '100%', textAlign: 'left' }}>
-                    {a.title} {a.category && <span style={{ color: 'var(--muted)' }}>({a.category})</span>}
+                <li key={a.id}>
+                  <button className="btn ghost" onClick={() => setSelected(a)} style={{ width: '100%', textAlign: 'left' }}>
+                    {a.title} {a.category && <span className="text-muted">({a.category})</span>}
                   </button>
                 </li>
               ))}
@@ -61,7 +64,7 @@ export function KnowledgeBasePage() {
 
         {selected && (
           <div className="card">
-            <h3 style={{ marginTop: 0 }}>{selected.title}</h3>
+            <h3>{selected.title}</h3>
             <p style={{ whiteSpace: 'pre-wrap' }}>{selected.content}</p>
           </div>
         )}
@@ -70,7 +73,7 @@ export function KnowledgeBasePage() {
       {creating && (
         <div className="modal-backdrop" role="dialog" aria-modal="true">
           <form className="modal" onSubmit={handleCreate}>
-            <h2 style={{ marginTop: 0 }}>Nuevo artículo</h2>
+            <h2>Nuevo artículo</h2>
             <div className="field">
               <label htmlFor="kbTitle">Título</label>
               <input id="kbTitle" required value={title} onChange={(e) => setTitle(e.target.value)} />

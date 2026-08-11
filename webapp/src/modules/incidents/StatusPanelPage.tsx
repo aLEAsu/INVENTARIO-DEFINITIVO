@@ -8,6 +8,15 @@ const STATUS_LABEL: Record<string, string> = {
   en_espera: 'En espera', resuelto: 'Resuelto', cerrado: 'Cerrado', reabierto: 'Reabierto',
 }
 
+const STATUS_BADGE: Record<string, string> = {
+  nuevo: 'badge-info', clasificado: 'badge-info', en_progreso: 'badge-warning',
+  en_espera: 'badge-warning', resuelto: 'badge-success', cerrado: 'badge-neutral', reabierto: 'badge-danger',
+}
+
+const PRIORITY_BADGE: Record<string, string> = {
+  P1: 'badge-danger', P2: 'badge-warning', P3: 'badge-info', P4: 'badge-neutral',
+}
+
 const ACTIVE_STATUSES = new Set(['nuevo', 'clasificado', 'en_progreso', 'en_espera', 'reabierto'])
 
 export function StatusPanelPage() {
@@ -34,44 +43,47 @@ export function StatusPanelPage() {
     .filter((e) => Date.now() - new Date(e.resolved_at!).getTime() < 7 * 86400000)
 
   function renderList(list: PublicStatusEntry[], emptyText: string) {
-    if (list.length === 0) return <p style={{ color: 'var(--muted)' }}>{emptyText}</p>
+    if (list.length === 0) return <p className="text-muted">{emptyText}</p>
     return (
-      <table>
-        <thead><tr><th>Folio</th><th>Categoría</th><th>Prioridad</th><th>Estado</th><th>Fecha</th></tr></thead>
-        <tbody>
-          {list.map((e) => (
-            <tr key={e.id}>
-              <td>{e.folio}</td>
-              <td>{categoryName(e.category_id)}</td>
-              <td><span className="badge">{e.priority}</span></td>
-              <td><span className="badge">{STATUS_LABEL[e.status] ?? e.status}</span></td>
-              <td>{new Date(e.created_at).toLocaleDateString('es-CO')}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="table-wrap">
+        <table>
+          <thead><tr><th>Folio</th><th>Categoría</th><th>Prioridad</th><th>Estado</th><th>Fecha</th></tr></thead>
+          <tbody>
+            {list.map((e) => (
+              <tr key={e.id}>
+                <td className="text-mono">{e.folio}</td>
+                <td>{categoryName(e.category_id)}</td>
+                <td><span className={`badge ${PRIORITY_BADGE[e.priority] ?? 'badge-neutral'}`}>{e.priority}</span></td>
+                <td><span className={`badge ${STATUS_BADGE[e.status] ?? 'badge-neutral'}`}>{STATUS_LABEL[e.status] ?? e.status}</span></td>
+                <td>{new Date(e.created_at).toLocaleDateString('es-CO')}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     )
   }
 
   return (
     <div>
-      <h2 style={{ marginTop: 0 }}>Panel de estado</h2>
-      <p style={{ color: 'var(--muted)' }}>
+      <span className="eyebrow">Incidentes</span>
+      <h2>Panel de estado</h2>
+      <p className="text-muted" style={{ marginTop: '0.3rem' }}>
         Vista para todo el equipo. No muestra descripciones, comentarios internos ni datos de quien reporta.
       </p>
 
-      <div className="card" style={{ marginBottom: '1rem' }}>
-        <h3 style={{ marginTop: 0 }}>Incidentes activos</h3>
+      <div className="card" style={{ marginBottom: '1rem', marginTop: '1.1rem' }}>
+        <h3>Incidentes activos</h3>
         {renderList(active, 'No hay incidentes activos en este momento.')}
       </div>
 
       <div className="card" style={{ marginBottom: '1rem' }}>
-        <h3 style={{ marginTop: 0 }}>Mantenimientos programados</h3>
+        <h3>Mantenimientos programados</h3>
         {renderList(scheduledMaintenance, 'No hay mantenimientos programados.')}
       </div>
 
       <div className="card">
-        <h3 style={{ marginTop: 0 }}>Resueltas recientemente</h3>
+        <h3>Resueltas recientemente</h3>
         {renderList(recentlyResolved, 'Sin novedades resueltas en los últimos 7 días.')}
       </div>
     </div>

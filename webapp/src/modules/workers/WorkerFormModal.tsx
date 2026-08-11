@@ -55,7 +55,7 @@ export function WorkerFormModal({ areas, locations, initial, onCancel, onSubmit 
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true">
       <form className="modal" onSubmit={handleSubmit}>
-        <h2 style={{ marginTop: 0 }}>{initial ? 'Editar trabajador' : 'Registrar trabajador'}</h2>
+        <h2>{initial ? 'Editar trabajador' : 'Registrar trabajador'}</h2>
         <div className="form-grid">
           <div className="field">
             <label htmlFor="wFullName">Nombre completo *</label>
@@ -116,22 +116,21 @@ export function WorkerFormModal({ areas, locations, initial, onCancel, onSubmit 
           </div>
         </div>
 
-        <div className="field" style={{ flexDirection: 'row', alignItems: 'flex-start', gap: '0.5rem' }}>
+        <div className="field field-checkbox">
           <input
             id="wConsent"
             type="checkbox"
             checked={form.birthday_consent ?? false}
             onChange={(e) => set('birthday_consent', e.target.checked)}
-            style={{ marginTop: '0.2rem' }}
           />
-          <label htmlFor="wConsent" style={{ fontWeight: 400 }}>
+          <label htmlFor="wConsent">
             El trabajador autoriza usar su nombre en recordatorios internos de cumpleaños
             (calendario y avisos por WhatsApp al equipo). Sin este consentimiento, no aparece
             en el calendario de cumpleaños ni recibe recordatorios asociados.
           </label>
         </div>
 
-        {error && <p style={{ color: 'var(--danger)' }}>{error}</p>}
+        {error && <p className="text-danger text-small">{error}</p>}
         <div className="modal-actions">
           <button type="button" className="btn secondary" onClick={onCancel} disabled={saving}>
             Cancelar

@@ -52,25 +52,31 @@ export function BirthdaysPage() {
 
   return (
     <div>
-      <h2 style={{ marginTop: 0 }}>Cumpleaños</h2>
+      <span className="eyebrow">Talento humano</span>
+      <h2>Cumpleaños</h2>
       {!canSeeYear && (
-        <p style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>
+        <p className="text-muted text-small" style={{ marginTop: '0.3rem' }}>
           Por tu rol solo ves día y mes; el año de nacimiento está protegido.
         </p>
       )}
 
-      <div className="stat-grid">
+      <div className="stat-grid" style={{ marginTop: '1.1rem' }}>
         <div className="card">
-          <h3 style={{ marginTop: 0 }}>Próximos cumpleaños</h3>
+          <h3>Próximos cumpleaños</h3>
           {upcoming.length === 0 ? (
-            <p style={{ color: 'var(--muted)' }}>Nadie ha dado su consentimiento para aparecer aquí todavía.</p>
+            <p className="text-muted">Nadie ha dado su consentimiento para aparecer aquí todavía.</p>
           ) : (
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            <ul className="divided-list">
               {upcoming.map((e) => (
-                <li key={e.worker_id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.4rem 0', borderBottom: '1px solid var(--line)' }}>
+                <li key={e.worker_id} className="cluster-between">
                   <span>{e.full_name}</span>
-                  <span style={{ color: 'var(--muted)' }}>
-                    {formatDate(e)} · {e.daysUntil === 0 ? 'hoy' : e.daysUntil === 1 ? 'mañana' : `en ${e.daysUntil} días`}
+                  <span className="text-muted text-small cluster" style={{ gap: '0.4rem' }}>
+                    {formatDate(e)}
+                    {e.daysUntil <= 1 ? (
+                      <span className="badge badge-success">{e.daysUntil === 0 ? 'hoy' : 'mañana'}</span>
+                    ) : (
+                      <span>en {e.daysUntil} días</span>
+                    )}
                   </span>
                 </li>
               ))}
@@ -79,7 +85,7 @@ export function BirthdaysPage() {
         </div>
 
         <div className="card">
-          <h3 style={{ marginTop: 0 }}>Calendario mensual</h3>
+          <h3>Calendario mensual</h3>
           <div className="field">
             <label htmlFor="monthSelect">Mes</label>
             <select id="monthSelect" value={month} onChange={(e) => setMonth(Number(e.target.value))}>
@@ -91,11 +97,11 @@ export function BirthdaysPage() {
             </select>
           </div>
           {monthEntries.length === 0 ? (
-            <p style={{ color: 'var(--muted)' }}>Sin cumpleaños registrados en {MONTH_NAMES[month - 1]}.</p>
+            <p className="text-muted">Sin cumpleaños registrados en {MONTH_NAMES[month - 1]}.</p>
           ) : (
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            <ul className="divided-list">
               {monthEntries.map((e) => (
-                <li key={e.worker_id} style={{ padding: '0.4rem 0', borderBottom: '1px solid var(--line)' }}>
+                <li key={e.worker_id}>
                   <strong>{e.birth_day}</strong> — {e.full_name}
                 </li>
               ))}

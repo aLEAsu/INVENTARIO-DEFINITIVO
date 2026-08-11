@@ -60,16 +60,17 @@ export function ReportsPage() {
 
   return (
     <div>
-      <h2 style={{ marginTop: 0 }}>Reportes</h2>
+      <span className="eyebrow">Inventario</span>
+      <h2>Reportes</h2>
 
-      <div className="stat-grid">
-        <div className="card stat-card"><strong>{assets.length}</strong><span>Activos totales</span></div>
-        <div className="card stat-card"><strong>{withExpiredWarranty.length}</strong><span>Garantía vencida</span></div>
+      <div className="stat-grid" style={{ marginTop: '1.1rem' }}>
+        <div className="card stat-card"><div><strong>{assets.length}</strong><span>Activos totales</span></div></div>
+        <div className="card stat-card"><div><strong>{withExpiredWarranty.length}</strong><span>Garantía vencida</span></div></div>
       </div>
 
       <div className="card">
-        <div className="form-grid" style={{ marginBottom: '1rem' }}>
-          <div className="field">
+        <div className="cluster-between" style={{ marginBottom: '1rem', alignItems: 'flex-end' }}>
+          <div className="field" style={{ marginBottom: 0 }}>
             <label htmlFor="groupBy">Agrupar por</label>
             <select id="groupBy" value={group} onChange={(e) => setGroup(e.target.value as GroupKey)}>
               {Object.entries(GROUP_LABELS).map(([k, label]) => (
@@ -79,11 +80,10 @@ export function ReportsPage() {
               ))}
             </select>
           </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-          <button className="btn secondary" onClick={exportPdf}>Exportar PDF</button>
-          <button className="btn secondary" onClick={() => void exportXlsx()}>Exportar Excel</button>
+          <div className="cluster">
+            <button className="btn secondary" onClick={exportPdf}>Exportar PDF</button>
+            <button className="btn secondary" onClick={() => void exportXlsx()}>Exportar Excel</button>
+          </div>
         </div>
 
         <table>
