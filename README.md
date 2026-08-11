@@ -1,4 +1,24 @@
-# Activo — Inventario clínico UNO-P
+# Activo → UNOP TI Hub
+
+Este repositorio contiene dos aplicaciones mientras dura la migración:
+
+- **App legacy** (`index.html`, `app.js`, este README) — la PWA de inventario
+  original, en JavaScript puro. Sigue funcionando y se documenta abajo tal
+  cual siempre ha estado.
+- **`webapp/`** — el frontend nuevo (React + TypeScript + Vite) del proyecto
+  **UNOP TI Hub**, que evoluciona el inventario hacia una plataforma modular
+  (Inventario, Trabajadores/Cumpleaños, Monitor de Puertos, Incidentes TI).
+  Ver [`webapp/README.md`](webapp/README.md) para instalarlo y correrlo.
+
+Ambas apuntan al mismo proyecto Supabase. El esquema de base de datos ahora
+vive versionado en [`supabase/migrations/`](supabase/migrations/) (ver esa
+carpeta para el historial completo); `supabase/schema.sql` se conserva solo
+como referencia histórica del esquema original y ya no debe usarse para
+configurar un proyecto nuevo — usa las migraciones.
+
+---
+
+## App legacy — Inventario clínico UNO-P
 
 Aplicación de inventario personal para activos clínicos y administrativos. Está diseñada para que puedas registrar bienes sin internet y respaldarlos automáticamente en Supabase cuando la conexión regrese.
 
@@ -24,6 +44,11 @@ Aplicación de inventario personal para activos clínicos y administrativos. Est
 
 ## Configurar el respaldo gratuito en Supabase
 
+> Para un proyecto Supabase nuevo, aplica las migraciones de
+> [`supabase/migrations/`](supabase/migrations/) en orden (con la CLI de
+> Supabase o pegándolas una por una en el SQL Editor) en vez de usar
+> `schema.sql`, que quedó desactualizado tras la Fase 1.
+
 1. Crea una cuenta y un proyecto gratuito en [Supabase](https://supabase.com/dashboard).
 2. En el proyecto entra a **SQL Editor** → **New query**. Abre el archivo [schema.sql](supabase/schema.sql), copia todo su contenido, pégalo y pulsa **Run**.
 3. En **Authentication** → **Providers** → **Email**, verifica que Email esté habilitado.
@@ -47,10 +72,12 @@ El esquema incluye RLS (seguridad por filas): incluso si alguien consiguiera la 
 
 | Archivo | Propósito |
 |---|---|
-| `index.html`, `styles.css`, `app.js` | Interfaz y lógica de la aplicación. |
-| `sw.js`, `manifest.webmanifest` | Instalación y funcionamiento sin internet. |
-| `supabase/schema.sql` | Base de datos segura y políticas privadas. |
-| `Iniciar-Activo.bat`, `Start-Local.ps1` | Servidor local, sin dependencias. |
+| `index.html`, `styles.css`, `app.js` | Interfaz y lógica de la aplicación legacy. |
+| `sw.js`, `manifest.webmanifest` | Instalación y funcionamiento sin internet (app legacy). |
+| `supabase/schema.sql` | Esquema original — referencia histórica, ya no usar para setup nuevo. |
+| `supabase/migrations/` | Historial real y versionado del esquema de base de datos. |
+| `webapp/` | App nueva (React + TS + Vite) — UNOP TI Hub. |
+| `Iniciar-Activo.bat`, `Start-Local.ps1` | Servidor local de la app legacy, sin dependencias. |
 
 ## Importante
 
