@@ -35,7 +35,7 @@ para el detalle. Documentación completa del proyecto:
 | [`docs/supabase-setup.md`](docs/supabase-setup.md) | Levantar un proyecto Supabase nuevo desde cero. |
 | [`docs/deployment.md`](docs/deployment.md) | Build y despliegue de `webapp/`, checklist de producción. |
 | [`docs/runbook.md`](docs/runbook.md) | Backups, restauración, rotación de claves, recuperación ante fallos. |
-| [`docs/whatsapp-setup.md`](docs/whatsapp-setup.md) | Configuración de Meta WhatsApp Business Cloud API, paso a paso. |
+| [`docs/whatsapp-setup.md`](docs/whatsapp-setup.md) | Configuración de WhatsApp vía CallMeBot (gratuito), paso a paso. |
 | [`supabase/tests/rls_smoke_tests.sql`](supabase/tests/rls_smoke_tests.sql) | Pruebas de RLS reejecutables contra el proyecto real. |
 
 ## Configurar el respaldo en Supabase

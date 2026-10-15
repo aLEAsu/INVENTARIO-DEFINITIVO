@@ -3,16 +3,14 @@ import { useSession } from '../../core/auth/SessionContext'
 import { can } from '../../core/rbac'
 import {
   createRecipient,
-  createTemplate,
   getSettings,
   listDeliveries,
   listRecipients,
-  listTemplates,
   toggleRecipient,
+  updateRecipientApikey,
   upsertSettings,
   type Delivery,
   type Recipient,
-  type Template,
 } from '../../data/repositories/notificationsRepo'
 
 const STATUS_LABEL: Record<string, string> = {
@@ -31,12 +29,6 @@ const STATUS_BADGE: Record<string, string> = {
   error: 'badge-danger',
 }
 
-const APPROVAL_BADGE: Record<string, string> = {
-  pendiente: 'badge-warning',
-  aprobada: 'badge-success',
-  rechazada: 'badge-danger',
-}
-
 export function NotificationSettingsPage() {
   const { membership } = useSession()
   const canManage = can(membership?.role, 'workers', 'admin')
@@ -44,29 +36,22 @@ export function NotificationSettingsPage() {
   const [sendHour, setSendHour] = useState(8)
   const [feb29Policy, setFeb29Policy] = useState<'feb_28' | 'mar_1'>('feb_28')
   const [recipients, setRecipients] = useState<Recipient[]>([])
-  const [templates, setTemplates] = useState<Template[]>([])
   const [deliveries, setDeliveries] = useState<Delivery[]>([])
   const [newPhone, setNewPhone] = useState('')
   const [newLabel, setNewLabel] = useState('')
-  const [newTemplateName, setNewTemplateName] = useState('')
-  const [newTemplateMetaName, setNewTemplateMetaName] = useState('')
+  const [newApikey, setNewApikey] = useState('')
+  const [apikeyDrafts, setApikeyDrafts] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
 
   async function refresh() {
     if (!membership) return
     const orgId = membership.organizationId
-    const [settings, rec, tpl, del] = await Promise.all([
-      getSettings(orgId),
-      listRecipients(orgId),
-      listTemplates(orgId),
-      listDeliveries(orgId),
-    ])
+    const [settings, rec, del] = await Promise.all([getSettings(orgId), listRecipients(orgId), listDeliveries(orgId)])
     if (settings) {
       setSendHour(settings.send_hour_local)
       setFeb29Policy(settings.feb29_policy as 'feb_28' | 'mar_1')
     }
     setRecipients(rec)
-    setTemplates(tpl)
     setDeliveries(del)
   }
 
@@ -86,27 +71,20 @@ export function NotificationSettingsPage() {
     if (!membership) return
     setError(null)
     try {
-      await createRecipient(membership.organizationId, newPhone.trim(), newLabel.trim() || null)
+      await createRecipient(membership.organizationId, newPhone.trim(), newLabel.trim() || null, newApikey.trim() || null)
       setNewPhone('')
       setNewLabel('')
+      setNewApikey('')
       await refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo agregar el destinatario. Verifica el formato E.164 (+573001234567).')
     }
   }
 
-  async function handleAddTemplate(e: FormEvent) {
-    e.preventDefault()
-    if (!membership || !newTemplateName.trim() || !newTemplateMetaName.trim()) return
-    await createTemplate(membership.organizationId, {
-      name: newTemplateName,
-      meta_template_name: newTemplateMetaName,
-      language: 'es',
-      variables: [],
-      approval_status: 'pendiente',
-    })
-    setNewTemplateName('')
-    setNewTemplateMetaName('')
+  async function handleSaveApikey(id: string) {
+    const value = apikeyDrafts[id]
+    if (value === undefined) return
+    await updateRecipientApikey(id, value.trim() || null)
     await refresh()
   }
 
@@ -119,9 +97,10 @@ export function NotificationSettingsPage() {
       <span className="eyebrow">Talento humano</span>
       <h2>Notificaciones de cumpleaños</h2>
       <div className="notice notice-info" style={{ marginTop: '1.1rem' }}>
-        El envío real por WhatsApp está en <strong>modo simulación</strong> hasta que se configuren las
-        credenciales de Meta (ver docs/whatsapp-setup.md). Mientras tanto, cada envío queda registrado
-        igual en el historial, marcado como simulado.
+        El envío real por WhatsApp usa <a href="https://www.callmebot.com" target="_blank" rel="noopener noreferrer">CallMeBot</a> (gratuito,
+        sin cuenta de empresa) y está en <strong>modo simulación</strong> hasta que configures <code>WHATSAPP_SEND_MODE=live</code> en la Edge
+        Function. Cada destinatario debe registrar su propio número con CallMeBot y pegar aquí su apikey — ver{' '}
+        <code>docs/whatsapp-setup.md</code>. Mientras tanto, cada envío queda registrado igual en el historial, marcado como simulado.
       </div>
 
       <div className="stat-grid">
@@ -151,54 +130,36 @@ export function NotificationSettingsPage() {
             <label htmlFor="newLabel">Etiqueta</label>
             <input id="newLabel" placeholder="Recursos Humanos" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
           </div>
+          <div className="field">
+            <label htmlFor="newApikey">Apikey de CallMeBot (opcional por ahora)</label>
+            <input id="newApikey" placeholder="123456" value={newApikey} onChange={(e) => setNewApikey(e.target.value)} />
+          </div>
           {error && <p className="text-danger text-small">{error}</p>}
           <button className="btn" type="submit">Agregar</button>
           <ul className="divided-list" style={{ marginTop: '0.75rem' }}>
             {recipients.map((r) => (
-              <li key={r.id} className="cluster-between">
-                <span>{r.phone_e164} {r.label && `(${r.label})`}</span>
-                <button type="button" className="btn secondary btn-sm" onClick={() => void toggleRecipient(r.id, !r.active).then(refresh)}>
-                  {r.active ? 'Desactivar' : 'Activar'}
-                </button>
+              <li key={r.id}>
+                <div className="cluster-between">
+                  <span>{r.phone_e164} {r.label && `(${r.label})`}</span>
+                  <button type="button" className="btn secondary btn-sm" onClick={() => void toggleRecipient(r.id, !r.active).then(refresh)}>
+                    {r.active ? 'Desactivar' : 'Activar'}
+                  </button>
+                </div>
+                <div className="field" style={{ marginTop: '0.4rem', marginBottom: 0 }}>
+                  <label htmlFor={`apikey-${r.id}`}>Apikey de CallMeBot</label>
+                  <input
+                    id={`apikey-${r.id}`}
+                    placeholder={r.callmebot_apikey ? '•••••• (configurada)' : 'Sin configurar'}
+                    value={apikeyDrafts[r.id] ?? r.callmebot_apikey ?? ''}
+                    onChange={(e) => setApikeyDrafts((prev) => ({ ...prev, [r.id]: e.target.value }))}
+                    onBlur={() => void handleSaveApikey(r.id)}
+                  />
+                </div>
               </li>
             ))}
           </ul>
         </form>
       </div>
-
-      <form className="card" onSubmit={handleAddTemplate} style={{ marginBottom: '1rem' }}>
-        <h3>Plantillas de WhatsApp (metadata)</h3>
-        <p className="text-muted text-small">
-          La plantilla real se crea y se aprueba en el panel de Meta Business. Aquí solo se registra
-          para llevar el control de nombre/idioma/estado.
-        </p>
-        <div className="form-grid">
-          <div className="field">
-            <label htmlFor="tplName">Nombre interno</label>
-            <input id="tplName" value={newTemplateName} onChange={(e) => setNewTemplateName(e.target.value)} />
-          </div>
-          <div className="field">
-            <label htmlFor="tplMetaName">Nombre exacto en Meta</label>
-            <input id="tplMetaName" value={newTemplateMetaName} onChange={(e) => setNewTemplateMetaName(e.target.value)} />
-          </div>
-        </div>
-        <button className="btn" type="submit">Registrar plantilla</button>
-        <div className="table-wrap" style={{ marginTop: '0.75rem' }}>
-          <table>
-            <thead>
-              <tr><th>Nombre</th><th>Nombre en Meta</th><th>Idioma</th><th>Estado</th></tr>
-            </thead>
-            <tbody>
-              {templates.map((t) => (
-                <tr key={t.id}>
-                  <td>{t.name}</td><td>{t.meta_template_name}</td><td>{t.language}</td>
-                  <td><span className={`badge ${APPROVAL_BADGE[t.approval_status] ?? 'badge-neutral'}`}>{t.approval_status}</span></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </form>
 
       <div className="card table-wrap">
         <h3>Historial de envíos</h3>

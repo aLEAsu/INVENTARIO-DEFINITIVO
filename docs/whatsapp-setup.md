@@ -1,13 +1,20 @@
-# Configuración de WhatsApp Business Cloud API — UNOP TI Hub
+# Configuración de WhatsApp (CallMeBot) — UNOP TI Hub
 
 El sistema de recordatorios de cumpleaños ya está construido y desplegado
-(Edge Functions `send-birthday-notifications` y `whatsapp-webhook`, cron
-horario, tablas de auditoría de envíos). **Hoy corre en modo simulación**:
-calcula todo, registra cada "envío" en `notification_deliveries`, pero no
-sale ninguna llamada real a Meta. Esta guía es para cuando quieras activarlo
-de verdad.
+(Edge Function `send-birthday-notifications`, cron horario, tablas de
+auditoría de envíos). **Hoy corre en modo simulación**: calcula todo,
+registra cada "envío" en `notification_deliveries`, pero no sale ninguna
+llamada real. Esta guía es para cuando quieras activarlo de verdad.
 
-## 0. Paso obligatorio ya mismo (no depende de Meta)
+El envío real usa [CallMeBot](https://www.callmebot.com/), **no** la API de
+WhatsApp Business Cloud de Meta: es gratuito y no pide cuenta de empresa,
+pero es un servicio **no oficial** (no es de Meta/WhatsApp) — puede tener
+límites de envíos, demoras, o dejar de funcionar sin previo aviso. Para
+notificar a un grupo pequeño y conocido (RR.HH., el equipo), funciona bien;
+no es apto para mensajes masivos ni para contactar gente que no dio su
+consentimiento explícito.
+
+## 0. Paso obligatorio ya mismo (no depende de CallMeBot)
 
 El cron que dispara la función cada hora necesita un secreto compartido
 (`CRON_SECRET`) que ya se generó y quedó guardado en Supabase Vault. Sin
@@ -29,79 +36,65 @@ al día siguiente, o forzando una ejecución manual desde **Edge Functions →
 send-birthday-notifications → Invoke** con el header `x-cron-secret` igual
 al valor copiado.
 
-## 1. Crear la app de Meta y la cuenta de WhatsApp Business
+## 1. Cada destinatario registra su número con CallMeBot (una sola vez)
 
-1. Entra a [developers.facebook.com](https://developers.facebook.com/) y
-   crea una cuenta de desarrollador si no tienes una.
-2. **Mis apps → Crear app → tipo "Empresa"**.
-3. Dentro de la app, agrega el producto **WhatsApp**.
-4. Meta crea automáticamente un número de prueba. Para producción real,
-   agrega y verifica tu propio número en **WhatsApp → Configuración de la
-   API → Números de teléfono**.
-5. Anota:
-   - **Phone Number ID** (en Configuración de la API) → variable
-     `WHATSAPP_PHONE_NUMBER_ID`.
-   - **Token de acceso**: genera uno **permanente** (no el temporal de 24h)
-     desde **Configuración de la app → Usuarios del sistema**, creando un
-     usuario del sistema con rol Admin y generando un token con permiso
-     `whatsapp_business_messaging` → variable `WHATSAPP_TOKEN`.
-   - **App Secret**: en **Configuración → Básica** de la app → variable
-     `WHATSAPP_APP_SECRET`.
+CallMeBot solo puede enviar mensajes **al mismo número que se registró** —
+no sirve para contactar a cualquier persona, cada destinatario se registra a
+sí mismo y obtiene su propia apikey. Esto lo hace cada persona que debe
+recibir el aviso de cumpleaños (por ejemplo, alguien de RR.HH.), no el
+administrador del sistema por ellos:
 
-## 2. Crear y aprobar la plantilla de mensaje
+1. Agrega el número de teléfono oficial de CallMeBot a tus contactos de
+   WhatsApp — **cópialo de [callmebot.com/blog/free-api-whatsapp-messages](https://www.callmebot.com/blog/free-api-whatsapp-messages/)**,
+   el número público ha cambiado en el pasado y esa es la fuente que se
+   mantiene actualizada.
+2. Envíale por WhatsApp el mensaje de activación indicado en esa misma
+   página (algo como "I allow callmebot to send me messages").
+3. CallMeBot responde (puede tardar hasta un par de minutos) con un mensaje
+   que incluye tu **apikey** personal — es un número, p. ej. `123456`.
+4. En la app: **Trabajadores → Notificaciones**, agrega tu número como
+   destinatario (o edítalo si ya existe) y pega esa apikey en el campo
+   "Apikey de CallMeBot".
 
-Meta exige que todo mensaje fuera de una conversación abierta por el
-usuario use una **plantilla aprobada**.
+Repite esto por cada persona que deba recibir los avisos. Un destinatario
+sin apikey configurada simplemente no recibe mensajes en vivo (queda
+registrado como error en el historial, explicando por qué).
 
-1. En **WhatsApp Manager → Plantillas de mensajes → Crear plantilla**.
-2. Categoría: **Utilidad**. Nombre: `birthday_reminder` (debe coincidir
-   exactamente con lo que usa la Edge Function — si usas otro nombre,
-   ajústalo en `supabase/functions/send-birthday-notifications/index.ts`).
-3. Idioma: Español.
-4. Cuerpo sugerido: `Hoy es el cumpleaños de {{1}}. ¡No olviden felicitarlo!`
-   (una sola variable: el nombre del trabajador).
-5. Envía a revisión. Meta suele aprobar plantillas simples en minutos a
-   pocas horas. El estado se refleja en el campo `approval_status` de la
-   tabla `notification_templates` — actualízalo manualmente desde
-   **Trabajadores → Notificaciones** en la app una vez Meta la apruebe (no
-   hay sincronización automática de estado de plantillas todavía).
-
-## 3. Configurar el webhook de estados de entrega
-
-1. En **WhatsApp → Configuración → Webhook**, URL de callback:
-   `https://otjoywhmbddrspvyghcr.supabase.co/functions/v1/whatsapp-webhook`
-2. **Verify token**: inventa un valor y guárdalo también como secreto de
-   Edge Function `WHATSAPP_WEBHOOK_VERIFY_TOKEN` (Project Settings → Edge
-   Functions → Secrets). Debe ser el mismo valor en ambos lados.
-3. Suscríbete al campo **messages** (incluye los `statuses` de entrega:
-   enviado/entregado/leído/fallido).
-4. Meta hará un `GET` de verificación inmediatamente — si el verify token
-   coincide, se suscribe. Si falla, revisa que el secreto esté bien copiado
-   (sin espacios) y reintenta.
-
-## 4. Variables de entorno completas (Edge Function Secrets)
+## 2. Variables de entorno (Edge Function Secrets)
 
 Configúralas en **Project Settings → Edge Functions → Secrets**:
 
 | Variable | Obligatoria desde | Propósito |
 |---|---|---|
 | `CRON_SECRET` | Ahora (paso 0) | Autentica al cron frente a la función de envío. |
-| `WHATSAPP_WEBHOOK_VERIFY_TOKEN` | Al configurar el webhook (paso 3) | Handshake de suscripción de Meta. |
-| `WHATSAPP_APP_SECRET` | Al configurar el webhook (paso 3) | Valida la firma HMAC de cada callback de Meta. |
-| `WHATSAPP_TOKEN` | Solo al pasar a envío real | Token de acceso para llamar a la Cloud API. |
-| `WHATSAPP_PHONE_NUMBER_ID` | Solo al pasar a envío real | Número emisor de los mensajes. |
 | `WHATSAPP_SEND_MODE` | Solo al pasar a envío real | Poner exactamente `live`. Cualquier otro valor (o ausente) = simulación. |
 
-`SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` los inyecta Supabase
-automáticamente en toda Edge Function — no hace falta configurarlos.
+No hace falta ningún token ni secreto de aplicación — la "credencial" es la
+apikey que cada destinatario pega en su propio registro (paso 1). `SUPABASE_URL`
+y `SUPABASE_SERVICE_ROLE_KEY` los inyecta Supabase automáticamente en toda
+Edge Function.
 
-## 5. Pasar de simulación a envío real
+## 3. Pasar de simulación a envío real
 
-Solo cuando tengas plantilla **aprobada** y las 5 variables de arriba
-configuradas: crea el secreto `WHATSAPP_SEND_MODE=live`. Desde ese momento,
-cada cumpleaños con consentimiento y con al menos un destinatario activo
-generará un mensaje real. No hay marcha atrás automática: para volver a
-simulación, borra o cambia ese secreto.
+Cuando al menos un destinatario activo tenga su apikey de CallMeBot
+configurada: crea el secreto `WHATSAPP_SEND_MODE=live`. Desde ese momento,
+cada cumpleaños con consentimiento del trabajador generará un mensaje real
+a cada destinatario activo **que tenga apikey configurada**; los que no la
+tengan quedan marcados como error, no se intenta enviarles nada. No hay
+marcha atrás automática: para volver a simulación, borra o cambia ese
+secreto.
 
-Antes de activarlo en producción, prueba con una organización de prueba y un
-número de WhatsApp propio como destinatario.
+Antes de activarlo en producción, prueba con un número de WhatsApp propio
+como único destinatario activo.
+
+## Nota sobre la integración anterior con Meta (retirada)
+
+Esta app usó antes la API de WhatsApp Business Cloud de Meta (token de
+acceso, plantillas aprobadas, webhook de estados de entrega firmado con
+HMAC). Se reemplazó por completo por CallMeBot para no depender de una
+cuenta de empresa. Las tablas `notification_templates` y las columnas
+`notification_deliveries.template_id`/`meta_message_id` quedaron en el
+esquema sin usar (no se borraron para no perder datos de un cambio de
+esquema innecesario); la Edge Function `whatsapp-webhook` (verificación de
+firma de Meta) también quedó desplegada pero inerte — ninguna de las dos
+hace falta configurar ni usar.

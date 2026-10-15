@@ -60,12 +60,12 @@ documentada) · ⛔ fuera de alcance por decisión del usuario.
 | Vista de permisos (administrador, talento humano, ingeniero TI, lector) | ✅ | Matriz de roles, ver `docs/roles-matrix.md`. |
 | Destinatarios WhatsApp E.164, uno o varios | ✅ | `birthday_notification_recipients`, check constraint de formato E.164. |
 | Recordatorio 1 día antes y el mismo día, hora configurable, America/Bogota | ✅ | `organization_notification_settings.send_hour_local`, cron horario evalúa `same_day`/`day_before`. |
-| Plantillas aprobadas de Meta (nombre, idioma, variables, estado) | ✅ | `notification_templates`. |
-| Registro de envío con idempotency key, respuesta de Meta, estado, reintentos, motivo de error | ✅ | `notification_deliveries`. |
-| Webhook de estados validado | ✅ | `whatsapp-webhook`, valida firma HMAC-SHA256 antes de procesar. |
+| Envío vía CallMeBot (gratuito, no oficial) con apikey por destinatario | ✅ | `birthday_notification_recipients.callmebot_apikey`; sin apikey configurada, ese destinatario queda marcado como error, no se intenta el envío. |
+| Registro de envío con idempotency key, respuesta del proveedor, estado, reintentos, motivo de error | ✅ | `notification_deliveries`. |
 | Cero duplicados aunque el cron corra más de una vez | ✅ | Doble barrera: `unique(organization_id, run_date, run_type)` en jobs + `unique(idempotency_key)` en deliveries. Verificado con inserción doble real (solo 1 fila persistió). |
 | Comportamiento configurable para 29 de febrero | ✅ | `feb29_policy` (`feb_28`/`mar_1`), probado con casos límite (Node + lógica compartida en `date-utils.ts`). |
-| Modo simulación obligatorio hasta habilitación explícita | ✅ | `WHATSAPP_SEND_MODE` default `simulation`; verificado en logs reales (403 sin `CRON_SECRET`, ninguna llamada a Meta posible sin configuración explícita). |
+| Modo simulación obligatorio hasta habilitación explícita | ✅ | `WHATSAPP_SEND_MODE` default `simulation`; verificado en logs reales (403 sin `CRON_SECRET`, ninguna llamada a CallMeBot posible sin configuración explícita). |
+| 🔄 Integración con Meta WhatsApp Business Cloud API retirada | 🟡 | Reemplazada por CallMeBot a pedido del usuario (gratis, sin cuenta de empresa). `notification_templates` y las columnas `template_id`/`meta_message_id` de `notification_deliveries` quedaron sin usar en el esquema (no se borraron); `whatsapp-webhook` sigue desplegada pero inerte. Ver `docs/whatsapp-setup.md`. |
 | Edge Function + Cron diario documentados | ✅ | `send-birthday-notifications` + `pg_cron`/`pg_net`, `docs/whatsapp-setup.md`. |
 
 **5 revisiones — Módulo 2:**
@@ -127,8 +127,8 @@ a medio construir.
 2. **`CRON_SECRET` sin configurar** como secreto de Edge Function — el cron
    ya corre cada hora pero responde 403 hasta este paso manual (ver
    `docs/whatsapp-setup.md` paso 0).
-3. **WhatsApp en modo simulación** — intencional hasta que el usuario tenga
-   cuenta de Meta Business y complete `docs/whatsapp-setup.md`.
+3. **WhatsApp en modo simulación** — intencional hasta que cada destinatario
+   registre su propia apikey de CallMeBot; ver `docs/whatsapp-setup.md`.
 4. **`deno test` no ejecutado formalmente** — verificado con harness Node
    equivalente por falta de Deno CLI en este entorno; correr `deno test`
    real la próxima vez que se edite `_shared/date-utils.ts`.

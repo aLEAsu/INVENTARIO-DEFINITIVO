@@ -16,13 +16,11 @@ flowchart TB
         Storage["Storage\nbucket privado 'attachments'"]
         Cron["pg_cron + pg_net\ndisparo horario"]
         EF1["Edge Function\nsend-birthday-notifications"]
-        EF2["Edge Function\nwhatsapp-webhook"]
         Vault["Vault\nsecreto compartido cron"]
     end
 
-    subgraph Meta["Meta (WhatsApp Business Cloud API)"]
-        WA["API de envío"]
-        WH["Webhook de estados de entrega"]
+    subgraph CMB["CallMeBot (no oficial, gratuito)"]
+        WA["whatsapp.php\n(GET con apikey por destinatario)"]
     end
 
     UI -- "anon key, JWT de usuario" --> Auth
@@ -31,13 +29,14 @@ flowchart TB
     Cron -- "x-cron-secret (Vault)" --> EF1
     EF1 -- "service_role\n(bypassa RLS)" --> PG
     EF1 -- "solo si WHATSAPP_SEND_MODE=live" --> WA
-    WH -- "firma HMAC" --> EF2
-    EF2 -- "service_role" --> PG
     Vault -.-> Cron
 
     style EF1 fill:#0b3b60,color:#fff
-    style EF2 fill:#0b3b60,color:#fff
 ```
+
+*(La Edge Function `whatsapp-webhook`, que validaba callbacks firmados de
+Meta, quedó desplegada pero inerte tras retirar esa integración — ver
+[`docs/whatsapp-setup.md`](whatsapp-setup.md).)*
 
 **Principio de seguridad central**: el cliente (navegador) solo tiene la
 `anon key` y siempre pasa por RLS. La `service_role key` (que ignora RLS)

@@ -99,18 +99,19 @@ para estos módulos, es un trabajo adicional a planear.
 - Calendario de cumpleaños y "próximos cumpleaños" (`/trabajadores/cumpleanos`).
 - Importación/exportación CSV de trabajadores con validación fila por fila
   (documento duplicado, fecha inválida, etc. no abortan el resto del archivo).
-- Notificaciones por WhatsApp Business Cloud API (`/trabajadores/notificaciones`):
-  destinatarios (E.164), plantillas (metadata), hora de envío configurable,
-  política del 29 de febrero, historial de envíos con estado/reintentos/error.
-  Dos Edge Functions desplegadas: `send-birthday-notifications` (cron horario
-  vía `pg_cron`/`pg_net`, idempotencia por `unique(organization_id, run_date,
-  run_type)` en `notification_jobs` + `unique(idempotency_key)` en
-  `notification_deliveries` — verificado que un doble disparo del cron no
-  duplica envíos) y `whatsapp-webhook` (recibe estados de entrega de Meta,
-  valida la firma HMAC antes de procesar). **Modo simulación activo por
-  defecto — cero mensajes reales salen hasta configurar Meta**, ver
+- Notificaciones por WhatsApp vía [CallMeBot](https://www.callmebot.com/) (gratuito,
+  no oficial, sin cuenta de empresa — `/trabajadores/notificaciones`):
+  destinatarios (E.164 + apikey personal de CallMeBot), hora de envío
+  configurable, política del 29 de febrero, historial de envíos con
+  estado/reintentos/error. Edge Function `send-birthday-notifications`
+  (cron horario vía `pg_cron`/`pg_net`, idempotencia por
+  `unique(organization_id, run_date, run_type)` en `notification_jobs` +
+  `unique(idempotency_key)` en `notification_deliveries` — verificado que
+  un doble disparo del cron no duplica envíos). **Modo simulación activo
+  por defecto — cero mensajes reales salen hasta configurar
+  `WHATSAPP_SEND_MODE=live`**, ver
   [`../docs/whatsapp-setup.md`](../docs/whatsapp-setup.md) para los pasos
-  exactos y las variables de entorno.
+  exactos.
 
 **Incidentes y Comunicación TI (Fase 4)**
 - Folio consecutivo legible por organización (`INC-2026-0001`), generado con

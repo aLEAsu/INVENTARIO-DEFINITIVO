@@ -355,6 +355,7 @@ export type Database = {
       birthday_notification_recipients: {
         Row: {
           active: boolean
+          callmebot_apikey: string | null
           created_at: string
           id: string
           label: string | null
@@ -363,6 +364,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          callmebot_apikey?: string | null
           created_at?: string
           id?: string
           label?: string | null
@@ -371,6 +373,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          callmebot_apikey?: string | null
           created_at?: string
           id?: string
           label?: string | null
