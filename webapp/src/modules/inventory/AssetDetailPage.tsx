@@ -139,17 +139,23 @@ export function AssetDetailPage() {
   }
 
   function handlePrintQr() {
-    const win = window.open('', '_blank', 'width=320,height=420')
+    const win = window.open('', '_blank', 'width=320,height=420,noopener')
     if (!win) return
-    win.document.write(`
-      <html><head><title>QR ${asset!.code}</title></head>
-      <body style="text-align:center;font-family:sans-serif;padding:1rem;">
-        <img src="${qrDataUrl}" alt="QR ${asset!.code}" />
-        <p>${asset!.code}<br/>${asset!.name}</p>
-        <script>window.print()</script>
-      </body></html>
-    `)
-    win.document.close()
+    // Construido con el DOM (no document.write con interpolacion de string):
+    // nombre/codigo de activo son datos de usuario y no deben tratarse como
+    // HTML de confianza.
+    win.document.title = `QR ${asset!.code}`
+    const style = win.document.createElement('style')
+    style.textContent = 'body { text-align: center; font-family: sans-serif; padding: 1rem; }'
+    win.document.head.appendChild(style)
+    const img = win.document.createElement('img')
+    img.src = qrDataUrl
+    img.alt = `QR ${asset!.code}`
+    win.document.body.appendChild(img)
+    const label = win.document.createElement('p')
+    label.append(asset!.code, win.document.createElement('br'), asset!.name)
+    win.document.body.appendChild(label)
+    win.print()
   }
 
   type TimelineEntry = { date: string; label: string }

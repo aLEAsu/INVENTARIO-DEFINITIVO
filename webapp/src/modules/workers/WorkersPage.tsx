@@ -9,6 +9,7 @@ import {
   updateWorker,
   type Worker,
 } from '../../data/repositories/workersRepo'
+import { csvBlob, downloadBlob } from '../../core/csv'
 import { WorkerFormModal } from './WorkerFormModal'
 
 const CSV_COLUMNS = ['full_name', 'document', 'position', 'area', 'location', 'email', 'phone', 'status', 'hire_date', 'birth_date']
@@ -99,14 +100,7 @@ export function WorkersPage() {
       w.hire_date ?? '',
       w.birth_date ?? '',
     ])
-    const csv = [header, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
-    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `trabajadores-${Date.now()}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
+    downloadBlob(csvBlob([header, ...rows]), `trabajadores-${Date.now()}.csv`)
   }
 
   async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {

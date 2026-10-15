@@ -9,6 +9,7 @@ import type { AssetRecord } from '../../data/db'
 import { createAsset, listAssets, repairLegacyAssets, syncOutbox, type AssetInput } from '../../data/repositories/assetsRepo'
 import { listAreas, listCategories, listLocations, type Area, type Category, type Location } from '../../data/repositories/catalogsRepo'
 import { listWorkers, type Worker } from '../../data/repositories/workersRepo'
+import { csvBlob, downloadBlob } from '../../core/csv'
 import { AssetFormModal } from './AssetFormModal'
 
 const STATUS_LABEL: Record<string, string> = {
@@ -109,9 +110,7 @@ export function AssetsListPage() {
   function exportCsv() {
     const header = ['Codigo', 'Nombre', 'Categoria', 'Estado', 'Responsable', 'Ubicacion', 'Serial', 'Costo']
     const rows = filtered.map((a) => [a.code, a.name, a.category, STATUS_LABEL[a.status] ?? a.status, a.responsible ?? '', a.location ?? '', a.serial ?? '', a.cost ?? ''])
-    const csv = [header, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
-    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
-    downloadBlob(blob, `activos-${Date.now()}.csv`)
+    downloadBlob(csvBlob([header, ...rows]), `activos-${Date.now()}.csv`)
   }
 
   async function exportXlsx() {
@@ -271,11 +270,3 @@ export function AssetsListPage() {
   )
 }
 
-function downloadBlob(blob: Blob, fileName: string) {
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = fileName
-  a.click()
-  URL.revokeObjectURL(url)
-}

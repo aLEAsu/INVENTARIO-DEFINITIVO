@@ -19,8 +19,8 @@ export default defineConfig(({ command }) => ({
         description: 'Gestion de Activos, Talento, Operacion e Incidentes TI - UNOP',
         start_url: '.',
         display: 'standalone',
-        background_color: '#f5f8fa',
-        theme_color: '#0b3b60',
+        background_color: '#0c1210',
+        theme_color: '#0c1210',
         lang: 'es',
         icons: [
           { src: 'favicon.svg', sizes: 'any', type: 'image/svg+xml' },
