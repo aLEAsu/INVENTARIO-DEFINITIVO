@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode, type SVGProps } from 'reac
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useSession } from '../core/auth/SessionContext'
 import { can, type ModuleKey } from '../core/rbac'
+import { BrandMark } from './BrandMark'
 
 const INVENTORY_ITEMS = [
   { to: '/inventario', label: 'Activos' },
@@ -82,18 +83,6 @@ function IconMenu(props: SVGProps<SVGSVGElement>) {
       <path d="M3 5.5h14" />
       <path d="M3 10h14" />
       <path d="M3 14.5h14" />
-    </svg>
-  )
-}
-
-function BrandMark() {
-  return (
-    <svg className="app-brand-mark" viewBox="0 0 32 32" aria-hidden="true">
-      <rect width="32" height="32" rx="8" fill="#0b3b60" />
-      <rect x="7" y="16" width="4.2" height="9" rx="1.2" fill="#0f8b8d" />
-      <rect x="13.4" y="10" width="4.2" height="15" rx="1.2" fill="#0f8b8d" />
-      <rect x="19.8" y="13.5" width="4.2" height="11.5" rx="1.2" fill="#5fd3c4" />
-      <circle cx="24.5" cy="7.5" r="2.6" fill="#3ecf7a" />
     </svg>
   )
 }

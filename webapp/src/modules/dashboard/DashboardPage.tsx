@@ -1,56 +1,83 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../../core/supabaseClient'
 import { useSession } from '../../core/auth/SessionContext'
+import { can } from '../../core/rbac'
+import { listIncidents } from '../../data/repositories/incidentsRepo'
 
-interface Counts {
+interface AssetCounts {
   total: number
   activos: number
   asignados: number
   mantenimiento: number
 }
 
+interface BlueprintInfo {
+  name: string
+  appliedAt: string
+}
+
+const OPEN_INCIDENT_STATUSES = new Set(['nuevo', 'clasificado', 'en_progreso', 'en_espera', 'reabierto'])
+
 export function DashboardPage() {
   const { membership } = useSession()
-  const [counts, setCounts] = useState<Counts | null>(null)
+  const canSeeIncidents = can(membership?.role, 'incidents', 'read')
+
+  const [assetCounts, setAssetCounts] = useState<AssetCounts | null>(null)
+  const [openIncidents, setOpenIncidents] = useState<number | null>(null)
+  const [blueprint, setBlueprint] = useState<BlueprintInfo | null>(null)
 
   useEffect(() => {
     if (!membership) return
     let active = true
+    const orgId = membership.organizationId
 
     async function load() {
-      const { data, error } = await supabase
-        .from('assets')
-        .select('status')
-        .eq('organization_id', membership!.organizationId)
-
+      const { data: assets } = await supabase.from('assets').select('status').eq('organization_id', orgId)
       if (!active) return
-      if (error || !data) {
-        setCounts({ total: 0, activos: 0, asignados: 0, mantenimiento: 0 })
-        return
+      setAssetCounts({
+        total: assets?.length ?? 0,
+        activos: assets?.filter((a) => a.status === 'activo').length ?? 0,
+        asignados: assets?.filter((a) => a.status === 'asignado').length ?? 0,
+        mantenimiento: assets?.filter((a) => a.status === 'mantenimiento').length ?? 0,
+      })
+
+      if (canSeeIncidents) {
+        const incidents = await listIncidents(orgId)
+        if (!active) return
+        setOpenIncidents(incidents.filter((i) => OPEN_INCIDENT_STATUSES.has(i.status)).length)
       }
 
-      setCounts({
-        total: data.length,
-        activos: data.filter((a) => a.status === 'activo').length,
-        asignados: data.filter((a) => a.status === 'asignado').length,
-        mantenimiento: data.filter((a) => a.status === 'mantenimiento').length,
-      })
+      const { data: applications } = await supabase
+        .from('organization_blueprint_applications')
+        .select('blueprint_name_snapshot, applied_at')
+        .eq('organization_id', orgId)
+        .order('applied_at', { ascending: false })
+        .limit(1)
+      if (!active) return
+      const latest = applications?.[0]
+      setBlueprint(latest ? { name: latest.blueprint_name_snapshot, appliedAt: latest.applied_at } : null)
     }
 
     void load()
     return () => {
       active = false
     }
-  }, [membership])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [membership?.organizationId])
 
   return (
     <div>
-      <span className="eyebrow">Panel operativo</span>
-      <h2>Tablero ejecutivo</h2>
+      <span className="eyebrow">Tablero</span>
+      <h2>{membership?.organizationName ?? 'Trabajo activo'}</h2>
+
       <div className="stat-grid" style={{ marginTop: '1.1rem' }}>
         <div className="card stat-card">
           <div>
-            <strong>{counts?.total ?? '—'}</strong>
+            <strong>
+              {assetCounts?.total ?? '—'}
+              <span className="stat-cursor" aria-hidden="true" />
+            </strong>
             <span>Activos totales</span>
           </div>
           <span className="stat-icon" aria-hidden="true">
@@ -63,7 +90,7 @@ export function DashboardPage() {
         </div>
         <div className="card stat-card">
           <div>
-            <strong>{counts?.activos ?? '—'}</strong>
+            <strong>{assetCounts?.activos ?? '—'}</strong>
             <span>Operativos</span>
           </div>
           <span className="stat-icon success" aria-hidden="true">
@@ -74,7 +101,7 @@ export function DashboardPage() {
         </div>
         <div className="card stat-card">
           <div>
-            <strong>{counts?.asignados ?? '—'}</strong>
+            <strong>{assetCounts?.asignados ?? '—'}</strong>
             <span>Asignados</span>
           </div>
           <span className="stat-icon" aria-hidden="true">
@@ -88,7 +115,7 @@ export function DashboardPage() {
         </div>
         <div className="card stat-card">
           <div>
-            <strong>{counts?.mantenimiento ?? '—'}</strong>
+            <strong>{assetCounts?.mantenimiento ?? '—'}</strong>
             <span>En mantenimiento</span>
           </div>
           <span className="stat-icon warning" aria-hidden="true">
@@ -99,14 +126,40 @@ export function DashboardPage() {
             </svg>
           </span>
         </div>
+        {canSeeIncidents && (
+          <div className="card stat-card">
+            <div>
+              <strong>{openIncidents ?? '—'}</strong>
+              <span>Incidentes abiertos</span>
+            </div>
+            <span className="stat-icon danger" aria-hidden="true">
+              <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="10" cy="10" r="7.3" />
+                <path d="M10 6.3v4.4" />
+                <circle cx="10" cy="13.6" r="0.9" fill="currentColor" stroke="none" />
+              </svg>
+            </span>
+          </div>
+        )}
       </div>
+
       <div className="card card-accent">
-        <h3>Próximas fases</h3>
+        <h3>Este trabajo</h3>
         <p className="text-muted">
-          Modulos de Trabajadores/Cumpleanos, Monitor de Puertos e Incidentes
-          llegan en las siguientes fases. Este tablero se ira completando con
-          sus indicadores a medida que se implementen.
+          {membership?.role === 'owner' ? 'Eres el responsable de' : 'Perteneces a'}{' '}
+          <strong>{membership?.organizationName}</strong> con rol <strong>{membership?.role}</strong>.
+          {blueprint && (
+            <>
+              {' '}Configurado a partir del blueprint <strong>{blueprint.name}</strong> el{' '}
+              {new Date(blueprint.appliedAt).toLocaleDateString('es-CO')}.
+            </>
+          )}
         </p>
+        <div className="cluster" style={{ marginTop: '0.8rem' }}>
+          <Link to="/inventario" className="btn secondary btn-sm">Ver inventario</Link>
+          {canSeeIncidents && <Link to="/incidentes" className="btn secondary btn-sm">Ver incidentes</Link>}
+          <Link to="/trabajadores" className="btn secondary btn-sm">Ver trabajadores</Link>
+        </div>
       </div>
     </div>
   )

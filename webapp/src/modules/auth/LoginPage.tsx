@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useSession } from '../../core/auth/SessionContext'
+import { BrandMark } from '../../ui/BrandMark'
 
 export function LoginPage() {
   const { session, signIn } = useSession()
@@ -22,47 +23,60 @@ export function LoginPage() {
 
   return (
     <div className="auth-page">
-      <form onSubmit={handleSubmit} className="card auth-card">
-        <div className="auth-brand">
-          <svg className="app-brand-mark" viewBox="0 0 32 32" aria-hidden="true">
-            <rect width="32" height="32" rx="8" fill="#0b3b60" />
-            <rect x="7" y="16" width="4.2" height="9" rx="1.2" fill="#0f8b8d" />
-            <rect x="13.4" y="10" width="4.2" height="15" rx="1.2" fill="#0f8b8d" />
-            <rect x="19.8" y="13.5" width="4.2" height="11.5" rx="1.2" fill="#5fd3c4" />
-            <circle cx="24.5" cy="7.5" r="2.6" fill="#3ecf7a" />
-          </svg>
+      <div className="auth-shell">
+        <div className="auth-visual">
+          <div className="auth-visual-brand">
+            <BrandMark />
+            <div>
+              <strong>UNOP TI Hub</strong>
+              <span>Inventario y operación técnica</span>
+            </div>
+          </div>
           <div>
-            <strong>UNOP TI Hub</strong>
-            <span>Inicia sesion con tu cuenta de la organizacion.</span>
+            <h1>Un trabajo nuevo, el mismo sistema.</h1>
+            <p>
+              Cada sitio tiene su propio inventario, su equipo y sus incidentes —
+              arrancas uno nuevo en minutos a partir de un blueprint de oficio.
+            </p>
+          </div>
+          <div className="auth-tag-strip" aria-hidden="true">
+            {Array.from({ length: 18 }).map((_, i) => (
+              <span key={i} />
+            ))}
           </div>
         </div>
-        <div className="field">
-          <label htmlFor="email">Correo</label>
-          <input
-            id="email"
-            type="email"
-            required
-            autoComplete="username"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="password">Contrasena</label>
-          <input
-            id="password"
-            type="password"
-            required
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
-        {error && <p className="text-danger text-small">{error}</p>}
-        <button className="btn" type="submit" disabled={submitting} style={{ width: '100%' }}>
-          {submitting ? 'Ingresando...' : 'Ingresar'}
-        </button>
-      </form>
+
+        <form onSubmit={handleSubmit} className="auth-form-panel">
+          <h2>Inicia sesión</h2>
+          <p className="text-muted text-small">Entra con tu cuenta para ver tus trabajos.</p>
+          <div className="field">
+            <label htmlFor="email">Correo</label>
+            <input
+              id="email"
+              type="email"
+              required
+              autoComplete="username"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="password">Contraseña</label>
+            <input
+              id="password"
+              type="password"
+              required
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          {error && <p className="text-danger text-small">{error}</p>}
+          <button className="btn" type="submit" disabled={submitting} style={{ width: '100%' }}>
+            {submitting ? 'Ingresando...' : 'Ingresar'}
+          </button>
+        </form>
+      </div>
     </div>
   )
 }
