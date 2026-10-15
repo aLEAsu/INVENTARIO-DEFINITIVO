@@ -1,5 +1,5 @@
-import { useEffect, useState, type ReactNode, type SVGProps } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { useEffect, useRef, useState, type ReactNode, type SVGProps } from 'react'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useSession } from '../core/auth/SessionContext'
 import { can, type ModuleKey } from '../core/rbac'
 
@@ -76,6 +76,16 @@ function IconChevron(props: SVGProps<SVGSVGElement>) {
   )
 }
 
+function IconMenu(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...iconProps(props)} width={20} height={20}>
+      <path d="M3 5.5h14" />
+      <path d="M3 10h14" />
+      <path d="M3 14.5h14" />
+    </svg>
+  )
+}
+
 function BrandMark() {
   return (
     <svg className="app-brand-mark" viewBox="0 0 32 32" aria-hidden="true">
@@ -135,17 +145,79 @@ function NavGroup({
   )
 }
 
+function OrgSwitcher() {
+  const { membership, memberships, switchOrganization, user } = useSession()
+  const navigate = useNavigate()
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [])
+
+  return (
+    <div className="org-switcher" ref={ref}>
+      <button type="button" className="org-switcher-trigger" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+        <div className="app-header-org">
+          <strong>{membership?.organizationName ?? 'Sin trabajo activo'}</strong>
+          <span className="text-muted text-small">
+            {user?.email} · rol: {membership?.role ?? '—'}
+          </span>
+        </div>
+        <IconChevron aria-hidden="true" style={{ transform: open ? 'rotate(90deg)' : undefined }} />
+      </button>
+      {open && (
+        <div className="org-switcher-menu">
+          {memberships.map((m) => (
+            <button
+              key={m.organizationId}
+              type="button"
+              className={`org-switcher-item${m.organizationId === membership?.organizationId ? ' active' : ''}`}
+              onClick={() => {
+                switchOrganization(m.organizationId)
+                setOpen(false)
+              }}
+            >
+              {m.organizationName}
+            </button>
+          ))}
+          <button
+            type="button"
+            className="org-switcher-item new-org"
+            onClick={() => {
+              setOpen(false)
+              navigate('/trabajos/nuevo')
+            }}
+          >
+            + Nuevo trabajo
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function Layout({ children }: { children: ReactNode }) {
-  const { membership, user, signOut } = useSession()
+  const { membership, signOut } = useSession()
   const location = useLocation()
+  const [navOpen, setNavOpen] = useState(false)
 
   const canSee = (module: ModuleKey) => can(membership?.role, module, 'read')
   const visibleInventoryItems = canSee('inventory') ? INVENTORY_ITEMS : []
   const visibleIncidentItems = canSee('incidents') ? INCIDENT_ITEMS : []
 
+  useEffect(() => {
+    setNavOpen(false)
+  }, [location.pathname])
+
   return (
     <div className="app-shell">
-      <aside className="app-sidebar">
+      <div className={`app-sidebar-overlay${navOpen ? ' open' : ''}`} onClick={() => setNavOpen(false)} aria-hidden="true" />
+      <aside className={`app-sidebar${navOpen ? ' open' : ''}`}>
         <div className="app-brand">
           <BrandMark />
           <div className="app-brand-text">
@@ -195,12 +267,16 @@ export function Layout({ children }: { children: ReactNode }) {
       </aside>
       <div>
         <header className="app-header">
-          <div className="app-header-org">
-            <strong>{membership?.organizationName ?? 'Sin organizacion'}</strong>
-            <span className="text-muted text-small">
-              {user?.email} · rol: {membership?.role ?? '—'}
-            </span>
-          </div>
+          <button
+            type="button"
+            className="app-menu-toggle"
+            aria-label={navOpen ? 'Cerrar menú' : 'Abrir menú'}
+            aria-expanded={navOpen}
+            onClick={() => setNavOpen((o) => !o)}
+          >
+            <IconMenu aria-hidden="true" />
+          </button>
+          <OrgSwitcher />
           <button className="btn secondary" onClick={() => void signOut()}>
             Cerrar sesion
           </button>

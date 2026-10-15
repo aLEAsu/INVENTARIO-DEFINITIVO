@@ -9,46 +9,67 @@ export interface OrgMembership {
   role: Role
 }
 
+const ACTIVE_ORG_STORAGE_KEY = 'unop-ti-hub-active-org'
+
 interface SessionState {
   loading: boolean
   session: Session | null
   user: User | null
-  /** Organizacion activa del usuario. Fase 1 asume una sola membresia por
-   * usuario (multi-organizacion queda para una fase posterior). */
+  /** Todos los trabajos (organizaciones) a los que pertenece el usuario. */
+  memberships: OrgMembership[]
+  /** Trabajo activo: el ultimo seleccionado (persistido), o el primero disponible. */
   membership: OrgMembership | null
+  switchOrganization: (organizationId: string) => void
+  createOrganization: (name: string) => Promise<{ organizationId: string | null; error: string | null }>
+  refreshMemberships: () => Promise<void>
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
 }
 
 const SessionContext = createContext<SessionState | null>(null)
 
-async function loadMembership(userId: string): Promise<OrgMembership | null> {
-  const { data: member, error } = await supabase
+async function loadMemberships(userId: string): Promise<OrgMembership[]> {
+  const { data: members, error } = await supabase
     .from('organization_members')
     .select('organization_id, role')
     .eq('user_id', userId)
-    .limit(1)
-    .maybeSingle()
 
-  if (error || !member || !isValidRole(member.role)) return null
+  if (error || !members || members.length === 0) return []
 
-  const { data: org } = await supabase
-    .from('organizations')
-    .select('name')
-    .eq('id', member.organization_id)
-    .maybeSingle()
+  const validMembers = members.filter((m): m is typeof m & { role: Role } => isValidRole(m.role))
+  const orgIds = [...new Set(validMembers.map((m) => m.organization_id))]
 
-  return {
-    organizationId: member.organization_id,
-    organizationName: org?.name ?? 'Organizacion',
-    role: member.role,
+  const { data: orgs } = await supabase.from('organizations').select('id, name').in('id', orgIds)
+  const nameById = new Map((orgs ?? []).map((o) => [o.id, o.name]))
+
+  return validMembers.map((m) => ({
+    organizationId: m.organization_id,
+    organizationName: nameById.get(m.organization_id) ?? 'Organizacion',
+    role: m.role,
+  }))
+}
+
+function readStoredActiveOrgId(): string | null {
+  try {
+    return localStorage.getItem(ACTIVE_ORG_STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
+function storeActiveOrgId(organizationId: string) {
+  try {
+    localStorage.setItem(ACTIVE_ORG_STORAGE_KEY, organizationId)
+  } catch {
+    // almacenamiento no disponible (modo privado, etc.) - no es critico
   }
 }
 
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [session, setSession] = useState<Session | null>(null)
-  const [membership, setMembership] = useState<OrgMembership | null>(null)
+  const [memberships, setMemberships] = useState<OrgMembership[]>([])
+  const [activeOrgId, setActiveOrgId] = useState<string | null>(null)
 
   useEffect(() => {
     let active = true
@@ -57,10 +78,15 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       if (!active) return
       setSession(nextSession)
       if (nextSession?.user) {
-        const m = await loadMembership(nextSession.user.id)
-        if (active) setMembership(m)
+        const list = await loadMemberships(nextSession.user.id)
+        if (!active) return
+        setMemberships(list)
+        const stored = readStoredActiveOrgId()
+        const resolved = list.find((m) => m.organizationId === stored) ?? list[0] ?? null
+        setActiveOrgId(resolved?.organizationId ?? null)
       } else {
-        setMembership(null)
+        setMemberships([])
+        setActiveOrgId(null)
       }
       if (active) setLoading(false)
     }
@@ -77,6 +103,34 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  async function refreshMemberships() {
+    if (!session?.user) return
+    const list = await loadMemberships(session.user.id)
+    setMemberships(list)
+    if (!list.some((m) => m.organizationId === activeOrgId)) {
+      const stored = readStoredActiveOrgId()
+      const resolved = list.find((m) => m.organizationId === stored) ?? list[0] ?? null
+      setActiveOrgId(resolved?.organizationId ?? null)
+    }
+  }
+
+  function switchOrganization(organizationId: string) {
+    if (!memberships.some((m) => m.organizationId === organizationId)) return
+    setActiveOrgId(organizationId)
+    storeActiveOrgId(organizationId)
+  }
+
+  async function createOrganization(name: string) {
+    const { data, error } = await supabase.rpc('create_organization', { p_name: name })
+    if (error || !data) {
+      return { organizationId: null, error: error?.message ?? 'No se pudo crear el trabajo' }
+    }
+    await refreshMemberships()
+    setActiveOrgId(data)
+    storeActiveOrgId(data)
+    return { organizationId: data, error: null }
+  }
+
   async function signIn(email: string, password: string) {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     return { error: error?.message ?? null }
@@ -86,11 +140,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut()
   }
 
+  const membership = memberships.find((m) => m.organizationId === activeOrgId) ?? memberships[0] ?? null
+
   const value: SessionState = {
     loading,
     session,
     user: session?.user ?? null,
+    memberships,
     membership,
+    switchOrganization,
+    createOrganization,
+    refreshMemberships,
     signIn,
     signOut,
   }

@@ -1,9 +1,12 @@
 import type { ReactNode } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { useSession } from './SessionContext'
 
-export function ProtectedRoute({ children }: { children: ReactNode }) {
+/** `requireMembership=false` para rutas accesibles con sesion pero sin
+ * ningun trabajo (organizacion) todavia, como la de crear el primero. */
+export function ProtectedRoute({ children, requireMembership = true }: { children: ReactNode; requireMembership?: boolean }) {
   const { loading, session, membership } = useSession()
+  const location = useLocation()
 
   if (loading) {
     return <div className="app-loading">Cargando sesion...</div>
@@ -13,13 +16,8 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
     return <Navigate to="/login" replace />
   }
 
-  if (!membership) {
-    return (
-      <div className="app-loading">
-        Tu usuario no pertenece a ninguna organizacion todavia. Pide a un
-        administrador que te agregue en organization_members.
-      </div>
-    )
+  if (requireMembership && !membership && location.pathname !== '/trabajos/nuevo') {
+    return <Navigate to="/trabajos/nuevo" replace />
   }
 
   return <>{children}</>

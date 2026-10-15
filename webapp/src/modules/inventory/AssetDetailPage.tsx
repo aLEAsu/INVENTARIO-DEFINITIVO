@@ -10,6 +10,7 @@ import { listMaintenanceForAsset, type MaintenanceRecord } from '../../data/repo
 import { listAuditForRecord, type AuditEntry } from '../../data/repositories/auditRepo'
 import { listAttachments, uploadAttachment, deleteAttachment, getAttachmentUrl, type Attachment } from '../../data/repositories/attachmentsRepo'
 import { listWorkers, type Worker } from '../../data/repositories/workersRepo'
+import { CustomFieldsPanel } from '../../ui/CustomFieldsPanel'
 import { AssetFormModal } from './AssetFormModal'
 import { listAreas, listCategories, listLocations, type Area, type Category, type Location } from '../../data/repositories/catalogsRepo'
 
@@ -242,6 +243,12 @@ export function AssetDetailPage() {
           </div>
         )}
       </div>
+
+      {membership && (
+        <div style={{ marginBottom: '1rem' }}>
+          <CustomFieldsPanel organizationId={membership.organizationId} entityType="asset" entityId={asset.id} canWrite={canWrite} />
+        </div>
+      )}
 
       <div className="card" style={{ marginBottom: '1rem' }}>
         <h3>Adjuntos y fotografías</h3>

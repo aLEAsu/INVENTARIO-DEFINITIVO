@@ -30,6 +30,19 @@ npm run test      # pruebas unitarias (Vitest)
 npm run lint      # oxlint
 ```
 
+## Multi-trabajo (pivote)
+
+La app ya no asume un solo tenant: un usuario puede pertenecer a varios
+"trabajos" (organizaciones) y cambiar entre ellos desde el selector en el
+header (`ui/Layout.tsx` → `OrgSwitcher`). Al crear un trabajo nuevo
+(`/trabajos/nuevo`) se elige un **blueprint de oficio** — categorías, campos
+personalizados y categorías de incidente predefinidos para un rubro técnico
+— que se aplica automáticamente (`apply_blueprint_to_organization`). Los
+campos personalizados por organización (`custom_field_definitions`) se
+administran en `/catalogos` y se editan con el componente genérico
+`ui/CustomFieldsPanel.tsx`. Detalle completo en
+[`../docs/architecture.md`](../docs/architecture.md#multi-trabajo-y-blueprints-de-oficio-migraciones-0030-0032).
+
 ## Qué incluye (Fase 1 + Fase 2)
 
 **Fundaciones (Fase 1)**

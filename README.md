@@ -11,13 +11,21 @@ historial completo); `supabase/schema.sql` se conserva solo como
 referencia histórica del esquema original y ya no debe usarse para
 configurar un proyecto nuevo — usa las migraciones.
 
-## Estado del proyecto (Fases 1-4 y 6 completas)
+## Estado del proyecto (Fases 1-4 y 6 completas + pivote multi-trabajo)
 
 `webapp/` implementa los 3 módulos funcionales del pedido original
 (Inventario, Trabajadores/Cumpleaños con WhatsApp en modo simulación, e
 Incidentes/Comunicación TI). El **Módulo 3 (agente de monitoreo de puertos
 en Windows) no se implementó**, por decisión explícita del usuario de saltar
-esa fase. Documentación completa del proyecto:
+esa fase.
+
+Desde las migraciones 0030-0032, el sistema dejó de ser un tenant único
+(UNOP) para ser una herramienta multi-trabajo: un ingeniero puede crear
+varios "trabajos" (organizaciones) bajo una sola cuenta, cambiar entre ellos
+desde el header, y arrancar cada uno a partir de un **blueprint de oficio**
+(categorías + campos personalizados + categorías de incidente reutilizables).
+Ver [`docs/architecture.md`](docs/architecture.md#multi-trabajo-y-blueprints-de-oficio-migraciones-0030-0032)
+para el detalle. Documentación completa del proyecto:
 
 | Documento | Contenido |
 |---|---|

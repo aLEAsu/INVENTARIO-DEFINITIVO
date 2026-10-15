@@ -16,15 +16,47 @@ import {
   type Location,
   type Site,
 } from '../../data/repositories/catalogsRepo'
+import {
+  createFieldDefinition,
+  listFieldDefinitions,
+  softDeleteFieldDefinition,
+  type CustomFieldDefinition,
+  type CustomFieldEntityType,
+} from '../../data/repositories/customFieldsRepo'
 
-type TabKey = 'sites' | 'locations' | 'areas' | 'categories'
+type TabKey = 'sites' | 'locations' | 'areas' | 'categories' | 'customFields'
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'sites', label: 'Sedes' },
   { key: 'locations', label: 'Ubicaciones' },
   { key: 'areas', label: 'Áreas' },
   { key: 'categories', label: 'Categorías' },
+  { key: 'customFields', label: 'Campos personalizados' },
 ]
+
+const ENTITY_TYPE_LABELS: Record<CustomFieldEntityType, string> = {
+  asset: 'Activos',
+  worker: 'Trabajadores',
+  incident: 'Incidentes',
+}
+
+const FIELD_TYPE_LABELS: Record<CustomFieldDefinition['field_type'], string> = {
+  text: 'Texto',
+  number: 'Número',
+  date: 'Fecha',
+  boolean: 'Sí / No',
+  select: 'Lista de opciones',
+}
+
+function slugifyFieldKey(label: string): string {
+  return label
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 60)
+}
 
 export function CatalogsPage() {
   const { membership } = useSession()
@@ -40,6 +72,14 @@ export function CatalogsPage() {
   const [siteId, setSiteId] = useState('')
   const [parentId, setParentId] = useState('')
   const [error, setError] = useState<string | null>(null)
+
+  const [cfEntityType, setCfEntityType] = useState<CustomFieldEntityType>('asset')
+  const [customFields, setCustomFields] = useState<CustomFieldDefinition[]>([])
+  const [cfLabel, setCfLabel] = useState('')
+  const [cfType, setCfType] = useState<CustomFieldDefinition['field_type']>('text')
+  const [cfOptions, setCfOptions] = useState('')
+  const [cfRequired, setCfRequired] = useState(false)
+  const [cfError, setCfError] = useState<string | null>(null)
 
   async function refresh() {
     if (!membership) return
@@ -61,6 +101,49 @@ export function CatalogsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [membership?.organizationId])
 
+  async function refreshCustomFields() {
+    if (!membership) return
+    setCustomFields(await listFieldDefinitions(membership.organizationId, cfEntityType))
+  }
+
+  useEffect(() => {
+    if (tab === 'customFields') void refreshCustomFields()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [membership?.organizationId, tab, cfEntityType])
+
+  async function handleCreateCustomField() {
+    if (!membership || !cfLabel.trim()) return
+    setCfError(null)
+    const key = slugifyFieldKey(cfLabel)
+    if (!key) {
+      setCfError('El nombre del campo debe tener al menos una letra o número.')
+      return
+    }
+    try {
+      await createFieldDefinition(membership.organizationId, {
+        entityType: cfEntityType,
+        key,
+        label: cfLabel.trim(),
+        fieldType: cfType,
+        options: cfType === 'select' ? cfOptions.split(',').map((o) => o.trim()).filter(Boolean) : null,
+        required: cfRequired,
+      })
+      setCfLabel('')
+      setCfOptions('')
+      setCfRequired(false)
+      setCfType('text')
+      await refreshCustomFields()
+    } catch (err) {
+      setCfError(err instanceof Error ? err.message : 'No se pudo crear el campo.')
+    }
+  }
+
+  async function handleDeleteCustomField(id: string) {
+    if (!confirm('Eliminar este campo personalizado? Los valores ya guardados dejarán de mostrarse.')) return
+    await softDeleteFieldDefinition(id)
+    await refreshCustomFields()
+  }
+
   async function handleCreate() {
     if (!membership || !name.trim()) return
     setError(null)
@@ -78,7 +161,7 @@ export function CatalogsPage() {
     }
   }
 
-  async function handleDelete(table: TabKey, id: string) {
+  async function handleDelete(table: Exclude<TabKey, 'customFields'>, id: string) {
     if (!confirm('Eliminar este elemento del catálogo?')) return
     await softDeleteCatalogEntry(table, id)
     await refresh()
@@ -106,7 +189,52 @@ export function CatalogsPage() {
         ))}
       </div>
 
-      {canWrite && (
+      {canWrite && tab === 'customFields' && (
+        <div className="card" style={{ marginBottom: '1rem' }}>
+          <div className="form-grid">
+            <div className="field">
+              <label htmlFor="cfEntityType">Aplica a</label>
+              <select id="cfEntityType" value={cfEntityType} onChange={(e) => setCfEntityType(e.target.value as CustomFieldEntityType)}>
+                {Object.entries(ENTITY_TYPE_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="cfLabel">Nombre del campo</label>
+              <input id="cfLabel" value={cfLabel} onChange={(e) => setCfLabel(e.target.value)} placeholder="Ej: Voltaje de operación" />
+            </div>
+            <div className="field">
+              <label htmlFor="cfType">Tipo</label>
+              <select id="cfType" value={cfType} onChange={(e) => setCfType(e.target.value as CustomFieldDefinition['field_type'])}>
+                {Object.entries(FIELD_TYPE_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {cfType === 'select' && (
+              <div className="field">
+                <label htmlFor="cfOptions">Opciones (separadas por coma)</label>
+                <input id="cfOptions" value={cfOptions} onChange={(e) => setCfOptions(e.target.value)} placeholder="Ej: 110V, 220V, 440V" />
+              </div>
+            )}
+            <div className="field-checkbox">
+              <input id="cfRequired" type="checkbox" checked={cfRequired} onChange={(e) => setCfRequired(e.target.checked)} />
+              <label htmlFor="cfRequired">Obligatorio</label>
+            </div>
+          </div>
+          {cfError && <p className="text-danger text-small">{cfError}</p>}
+          <button className="btn" onClick={() => void handleCreateCustomField()} disabled={!cfLabel.trim()}>
+            Agregar campo
+          </button>
+        </div>
+      )}
+
+      {canWrite && tab !== 'customFields' && (
         <div className="card" style={{ marginBottom: '1rem' }}>
           <div className="form-grid">
             <div className="field">
@@ -182,6 +310,17 @@ export function CatalogsPage() {
             }))}
             canWrite={canWrite}
             onDelete={(id) => void handleDelete('categories', id)}
+          />
+        )}
+        {tab === 'customFields' && (
+          <CatalogList
+            rows={customFields.map((f) => ({
+              id: f.id,
+              label: `${f.label}${f.required ? ' *' : ''}`,
+              sub: `${FIELD_TYPE_LABELS[f.field_type]}${f.field_type === 'select' && f.options ? `: ${(f.options as string[]).join(', ')}` : ''}`,
+            }))}
+            canWrite={canWrite}
+            onDelete={(id) => void handleDeleteCustomField(id)}
           />
         )}
       </div>

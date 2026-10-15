@@ -13,6 +13,7 @@ import { completeIncidentAction, createIncidentAction, listIncidentActions, type
 import { getMySubscription, subscribe, unsubscribe } from '../../data/repositories/incidentSubscribersRepo'
 import { listAttachments, uploadAttachment, type Attachment } from '../../data/repositories/attachmentsRepo'
 import { listOrgMembersWithNames, type OrgMemberOption } from '../../data/repositories/orgMembersRepo'
+import { CustomFieldsPanel } from '../../ui/CustomFieldsPanel'
 
 const STATUS_OPTIONS = ['nuevo', 'clasificado', 'en_progreso', 'en_espera', 'resuelto', 'cerrado', 'reabierto']
 const STATUS_LABEL: Record<string, string> = {
@@ -241,6 +242,12 @@ export function IncidentDetailPage() {
           </div>
         )}
       </div>
+
+      {membership && (
+        <div style={{ marginBottom: '1rem' }}>
+          <CustomFieldsPanel organizationId={membership.organizationId} entityType="incident" entityId={incident.id} canWrite={canEdit} />
+        </div>
+      )}
 
       <div className="card" style={{ marginBottom: '1rem' }}>
         <h3>Adjuntos</h3>

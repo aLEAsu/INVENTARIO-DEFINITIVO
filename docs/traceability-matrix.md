@@ -140,3 +140,17 @@ a medio construir.
    seguridad ni corrección, solo de rendimiento a futura escala.
 6. **Módulo 3 (agente Windows) no implementado** — decisión explícita del
    usuario, no un olvido.
+
+## Pivote multi-trabajo (migraciones 0030-0032)
+
+| Requisito | Estado | Evidencia |
+|---|---|---|
+| Un usuario puede pertenecer a varios trabajos (organizaciones) | ✅ | `organization_members` sin restricción de unicidad por `user_id`; `SessionContext` carga todas las membresías. |
+| Selector de trabajo activo, persistido | ✅ | `OrgSwitcher` en `ui/Layout.tsx`, `activeOrgId` en `localStorage`. |
+| Crear un trabajo nuevo sin acceso directo a `organizations` | ✅ | `create_organization()` security definer, sin policy de INSERT pública — verificado que inserta org + membresía `owner` atómicamente. |
+| Campos personalizados por organización (activos/trabajadores/incidentes) | 🟡 | Esquema + RLS + UI de administración (`/catalogos`) y de edición (`CustomFieldsPanel`) completos; cableado hoy solo en detalle de activos e incidentes, **no** en el modal de trabajadores. |
+| Blueprints de oficio reutilizables | ✅ | `trade_blueprints` + `apply_blueprint_to_organization()`, verificado con query directa que ambos blueprints de sistema ("Generico", "IT / Oficina") quedaron sembrados correctamente. |
+| Blueprint "IT / Oficina" basado en datos reales, no inventado | ✅ | Reconstruido en la misma migración a partir de las categorías/categorías de incidente reales de la organización UNOP. |
+| Exportar/importar blueprints como JSON | ⛔ | No implementado en esta sesión — el `definition jsonb` ya es portable, falta la UI. |
+| Blueprints personales (no solo de sistema) | 🟡 | Esquema y RLS lo soportan (`owner_user_id`); falta la UI para crear uno nuevo desde una organización ya configurada. |
+| Verificación end-to-end en navegador (crear trabajo, aplicar blueprint, ver campo personalizado) | ⛔ | No se pudo probar con sesión real: esta sesión no tiene credenciales del usuario `owner` de UNOP. Verificado en su lugar: build (`tsc -b && vite build`), `npm run lint`, `npm run test` (7/7) en verde, y las funciones SQL probadas por separado contra la base real. |

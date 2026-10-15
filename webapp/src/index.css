@@ -91,11 +91,6 @@ textarea:focus-visible {
   min-height: 100vh;
 }
 
-@media (max-width: 800px) {
-  .app-shell { grid-template-columns: 1fr; }
-  .app-sidebar { display: none; }
-}
-
 .app-sidebar {
   background: var(--primary);
   background-image: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%);
@@ -108,6 +103,54 @@ textarea:focus-visible {
   top: 0;
   height: 100vh;
   overflow-y: auto;
+}
+
+.app-menu-toggle {
+  display: none;
+}
+
+.app-sidebar-overlay {
+  display: none;
+}
+
+@media (max-width: 800px) {
+  .app-shell { grid-template-columns: 1fr; }
+
+  .app-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 248px;
+    max-width: 82vw;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    z-index: 60;
+    box-shadow: var(--shadow);
+  }
+
+  .app-sidebar.open { transform: translateX(0); }
+
+  .app-menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--ink);
+    flex: none;
+  }
+
+  .app-menu-toggle:hover { background: var(--surface-2); }
+
+  .app-sidebar-overlay.open {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(8, 20, 33, 0.45);
+    z-index: 55;
+  }
 }
 
 .app-brand {
@@ -680,6 +723,82 @@ tbody tr:last-child td { border-bottom: none; }
 
 .auth-brand strong { display: block; font-size: 1.05rem; }
 .auth-brand span { display: block; color: var(--muted); font-size: 0.8rem; margin-top: 0.1rem; }
+
+/* ---------- organizaciones / blueprints ---------- */
+
+.onboarding-card { max-width: 640px; }
+
+.org-switcher { position: relative; }
+
+.org-switcher-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  color: inherit;
+}
+
+.org-switcher-trigger:hover { opacity: 0.85; }
+
+.org-switcher-menu {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 0;
+  min-width: 240px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  z-index: 30;
+  overflow: hidden;
+}
+
+.org-switcher-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.6rem 0.8rem;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  font-size: 0.86rem;
+  color: var(--ink);
+}
+
+.org-switcher-item:last-child { border-bottom: none; }
+.org-switcher-item:hover { background: var(--surface-2); }
+.org-switcher-item.active { font-weight: 600; color: var(--primary); }
+.org-switcher-item.new-org { color: var(--primary); font-weight: 600; }
+
+.blueprint-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.7rem;
+  margin: 0.8rem 0 1.1rem;
+}
+
+.blueprint-option {
+  display: block;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.8rem 0.9rem;
+  cursor: pointer;
+  background: var(--surface-2);
+}
+
+.blueprint-option:has(input:checked) {
+  border-color: var(--primary);
+  background: var(--info-bg);
+}
+
+.blueprint-option input { position: absolute; opacity: 0; pointer-events: none; }
+.blueprint-option strong { display: block; margin-bottom: 0.2rem; }
+.blueprint-option span { display: block; color: var(--muted); font-size: 0.82rem; }
 
 @media (prefers-color-scheme: dark) {
   :root {
