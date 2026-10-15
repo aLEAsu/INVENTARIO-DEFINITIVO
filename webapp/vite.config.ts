@@ -3,7 +3,10 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  // GitHub Pages sirve este proyecto desde /INVENTARIO-DEFINITIVO/ (pagina
+  // de proyecto, no de usuario). En dev/preview local se mantiene "/".
+  base: command === 'serve' ? '/' : '/INVENTARIO-DEFINITIVO/',
   server: { port: 5173, strictPort: true },
   plugins: [
     react(),
@@ -29,4 +32,4 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
   },
-})
+}))
