@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import type { Area, Location } from '../../data/repositories/catalogsRepo'
 import type { Worker, WorkerInput } from '../../data/repositories/workersRepo'
+import { CustomFieldsPanel } from '../../ui/CustomFieldsPanel'
 
 interface Props {
+  organizationId: string
   areas: Area[]
   locations: Location[]
   initial?: Worker
@@ -26,7 +28,7 @@ function toInput(w?: Worker): WorkerInput {
   }
 }
 
-export function WorkerFormModal({ areas, locations, initial, onCancel, onSubmit }: Props) {
+export function WorkerFormModal({ organizationId, areas, locations, initial, onCancel, onSubmit }: Props) {
   const [form, setForm] = useState<WorkerInput>(toInput(initial))
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -115,6 +117,12 @@ export function WorkerFormModal({ areas, locations, initial, onCancel, onSubmit 
             <input id="wBirth" type="date" value={form.birth_date ?? ''} onChange={(e) => set('birth_date', e.target.value)} />
           </div>
         </div>
+
+        {initial && (
+          <div style={{ marginBottom: '0.85rem' }}>
+            <CustomFieldsPanel organizationId={organizationId} entityType="worker" entityId={initial.id} canWrite />
+          </div>
+        )}
 
         <div className="field field-checkbox">
           <input

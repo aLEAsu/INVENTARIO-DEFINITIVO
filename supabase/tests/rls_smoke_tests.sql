@@ -250,3 +250,100 @@ union all
 select 'B', folio from ins_b;
 
 rollback;
+
+
+-- ---------------------------------------------------------------------
+-- 8. Multi-trabajo: create_organization() dos veces con el mismo usuario
+--    deja ambas organizaciones visibles para el para el mismo dueno —
+--    es lo que permite cambiar de trabajo sin tener que crear uno nuevo.
+-- ---------------------------------------------------------------------
+-- Esperado: trabajos_visibles = 2.
+begin;
+insert into auth.users (id) values ('aaaaaaaa-0000-0000-0000-000000000005');
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"aaaaaaaa-0000-0000-0000-000000000005","role":"authenticated"}';
+
+select public.create_organization('RLS Test Trabajo A');
+select public.create_organization('RLS Test Trabajo B');
+
+select 'trabajos_visibles' as check, count(*)::text as result
+from public.organization_members where user_id = 'aaaaaaaa-0000-0000-0000-000000000005';
+
+rollback;
+
+
+-- ---------------------------------------------------------------------
+-- 9. anon (sin sesion) no puede crear organizaciones ni aplicar
+--    blueprints — hallazgo real corregido en la migracion 0033 (el grant
+--    por defecto de Supabase a anon sobrevivia al "revoke from public").
+-- ---------------------------------------------------------------------
+-- Esperado: "OK: anon no puede ejecutar create_organization".
+begin;
+set local role anon;
+do $$
+begin
+  perform public.create_organization('Intento anonimo');
+  raise exception 'anon SI pudo crear una organizacion -- vulnerabilidad reabierta';
+exception
+  when insufficient_privilege then
+    raise notice 'OK: anon no puede ejecutar create_organization';
+end $$;
+rollback;
+
+
+-- ---------------------------------------------------------------------
+-- 10. custom_field_values respeta el aislamiento por organizacion: un
+--     usuario ajeno no ve los valores de otra organizacion.
+-- ---------------------------------------------------------------------
+-- Esperado: 0.
+begin;
+do $$
+declare
+  v_org_id uuid;
+  v_field_id uuid;
+begin
+  select id into v_org_id from public.organizations limit 1;
+  insert into public.custom_field_definitions (organization_id, entity_type, key, label, field_type)
+  values (v_org_id, 'asset', 'rls_test_field', 'Campo de prueba RLS', 'text')
+  returning id into v_field_id;
+  insert into public.custom_field_values (organization_id, field_id, entity_type, entity_id, value)
+  values (v_org_id, v_field_id, 'asset', gen_random_uuid(), '"valor de prueba"'::jsonb);
+  insert into auth.users (id) values ('aaaaaaaa-0000-0000-0000-000000000006');
+end $$;
+
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"aaaaaaaa-0000-0000-0000-000000000006","role":"authenticated"}';
+
+select 'foreign_sees_custom_field_values' as check, count(*)::text as result
+from public.custom_field_values
+where field_id in (select id from public.custom_field_definitions where key = 'rls_test_field');
+
+rollback;
+
+
+-- ---------------------------------------------------------------------
+-- 11. Blueprints de sistema visibles para cualquier autenticado; un
+--     blueprint personal solo es visible para su dueno.
+-- ---------------------------------------------------------------------
+-- Esperado: ve_sistema = true, ve_personal_ajeno = false.
+begin;
+insert into auth.users (id) values ('aaaaaaaa-0000-0000-0000-000000000007');
+insert into auth.users (id) values ('aaaaaaaa-0000-0000-0000-000000000008');
+insert into public.trade_blueprints (owner_user_id, name, definition, is_system)
+values ('aaaaaaaa-0000-0000-0000-000000000007', 'Blueprint personal de prueba', '{}'::jsonb, false);
+
+create temporary table t_blueprints (who text, ve_sistema text, ve_personal_ajeno text);
+grant all on t_blueprints to authenticated;
+
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-0000-0000-0000-000000000008","role":"authenticated"}', true);
+insert into t_blueprints
+select
+  'ajeno',
+  (exists(select 1 from public.trade_blueprints where is_system))::text,
+  (exists(select 1 from public.trade_blueprints where name = 'Blueprint personal de prueba'))::text;
+
+reset role;
+select * from t_blueprints;
+
+rollback;

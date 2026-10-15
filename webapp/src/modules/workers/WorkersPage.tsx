@@ -265,6 +265,7 @@ export function WorkersPage() {
 
       {editing && membership && (
         <WorkerFormModal
+          organizationId={membership.organizationId}
           areas={areas}
           locations={locations}
           initial={editing === 'new' ? undefined : editing}

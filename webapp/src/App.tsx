@@ -1,30 +1,42 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { SessionProvider } from './core/auth/SessionContext'
 import { ProtectedRoute } from './core/auth/ProtectedRoute'
 import { Layout } from './ui/Layout'
 import { LoginPage } from './modules/auth/LoginPage'
 import { NewOrganizationPage } from './modules/organizations/NewOrganizationPage'
-import { DashboardPage } from './modules/dashboard/DashboardPage'
-import { AssetsListPage } from './modules/inventory/AssetsListPage'
-import { AssetDetailPage } from './modules/inventory/AssetDetailPage'
-import { MaintenancePage } from './modules/inventory/MaintenancePage'
-import { StockPage } from './modules/inventory/StockPage'
-import { PhysicalCountPage } from './modules/inventory/PhysicalCountPage'
-import { ReportsPage } from './modules/inventory/ReportsPage'
-import { CatalogsPage } from './modules/catalogs/CatalogsPage'
-import { WorkersPage } from './modules/workers/WorkersPage'
-import { BirthdaysPage } from './modules/workers/BirthdaysPage'
-import { NotificationSettingsPage } from './modules/workers/NotificationSettingsPage'
-import { IncidentsListPage } from './modules/incidents/IncidentsListPage'
-import { IncidentDetailPage } from './modules/incidents/IncidentDetailPage'
-import { KnowledgeBasePage } from './modules/incidents/KnowledgeBasePage'
-import { StatusPanelPage } from './modules/incidents/StatusPanelPage'
-import { IncidentReportsPage } from './modules/incidents/IncidentReportsPage'
+
+// Cada pagina (y las librerias pesadas que solo ella usa -- jsPDF, html5-qrcode,
+// write-excel-file) se descarga unicamente al visitar esa ruta, en vez de ir
+// todas en el bundle principal. LoginPage/NewOrganizationPage quedan fuera de
+// esto porque son lo primero que carga cualquier sesion nueva.
+const DashboardPage = lazy(() => import('./modules/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })))
+const AssetsListPage = lazy(() => import('./modules/inventory/AssetsListPage').then((m) => ({ default: m.AssetsListPage })))
+const AssetDetailPage = lazy(() => import('./modules/inventory/AssetDetailPage').then((m) => ({ default: m.AssetDetailPage })))
+const MaintenancePage = lazy(() => import('./modules/inventory/MaintenancePage').then((m) => ({ default: m.MaintenancePage })))
+const StockPage = lazy(() => import('./modules/inventory/StockPage').then((m) => ({ default: m.StockPage })))
+const PhysicalCountPage = lazy(() => import('./modules/inventory/PhysicalCountPage').then((m) => ({ default: m.PhysicalCountPage })))
+const ReportsPage = lazy(() => import('./modules/inventory/ReportsPage').then((m) => ({ default: m.ReportsPage })))
+const CatalogsPage = lazy(() => import('./modules/catalogs/CatalogsPage').then((m) => ({ default: m.CatalogsPage })))
+const WorkersPage = lazy(() => import('./modules/workers/WorkersPage').then((m) => ({ default: m.WorkersPage })))
+const BirthdaysPage = lazy(() => import('./modules/workers/BirthdaysPage').then((m) => ({ default: m.BirthdaysPage })))
+const NotificationSettingsPage = lazy(() =>
+  import('./modules/workers/NotificationSettingsPage').then((m) => ({ default: m.NotificationSettingsPage })),
+)
+const IncidentsListPage = lazy(() => import('./modules/incidents/IncidentsListPage').then((m) => ({ default: m.IncidentsListPage })))
+const IncidentDetailPage = lazy(() => import('./modules/incidents/IncidentDetailPage').then((m) => ({ default: m.IncidentDetailPage })))
+const KnowledgeBasePage = lazy(() => import('./modules/incidents/KnowledgeBasePage').then((m) => ({ default: m.KnowledgeBasePage })))
+const StatusPanelPage = lazy(() => import('./modules/incidents/StatusPanelPage').then((m) => ({ default: m.StatusPanelPage })))
+const IncidentReportsPage = lazy(() =>
+  import('./modules/incidents/IncidentReportsPage').then((m) => ({ default: m.IncidentReportsPage })),
+)
 
 function Protected({ children }: { children: React.ReactNode }) {
   return (
     <ProtectedRoute>
-      <Layout>{children}</Layout>
+      <Layout>
+        <Suspense fallback={<div className="app-loading">Cargando...</div>}>{children}</Suspense>
+      </Layout>
     </ProtectedRoute>
   )
 }
